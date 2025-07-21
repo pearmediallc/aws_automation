@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Automation Suite</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .form-select {
+            background-color: white;
+            cursor: pointer;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .progress {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            margin-top: 10px;
+            text-align: center;
+            color: #666;
+        }
+        .step-list {
+            margin-top: 20px;
+            padding: 0;
+            list-style: none;
+        }
+        .step-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #ddd;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .step-item.completed {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .step-item.in-progress {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+            animation: pulse 1.5s infinite;
+        }
+        .step-item.failed {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .existing-resources {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+        }
+        .existing-resources h3 {
+            margin-top: 0;
+            color: #721c24;
+        }
+        .existing-resources ul {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        .existing-resources button {
+            margin-right: 10px;
+            padding: 8px 20px;
+            font-size: 14px;
+            width: auto;
+        }
+        .manual-steps {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+        }
+        .manual-steps h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .manual-steps code {
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .domain-section {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .domain-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .domain-section .manual-steps {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+        }
+        .domain-section .manual-steps h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AWS Domain Setup Automation</h1>
+        
+        <div class="form-group">
+            <label for="account">AWS Account:</label>
+            <select id="account" class="form-select">
+                <option value="">Loading accounts...</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="domain">Domain Name(s):</label>
+            <input type="text" id="domain" placeholder="example.com or domain1.com, domain2.com, domain3.com" />
+            <small style="color: #666; display: block; margin-top: 5px;">Enter one or more domains separated by commas</small>
+        </div>
+        
+        <button id="setupBtn" onclick="setupDomain()">Setup Domain</button>
+        
+        <div id="status" class="status"></div>
+        
+        <div id="domainContainer"></div>
+    </div>
+
+    <script>
+        let activeTasks = new Map(); // Track multiple tasks
+        let statusInterval = null;
+
+        // Load accounts when page loads
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadAccounts();
+        });
+
+        async function loadAccounts() {
+            try {
+                const response = await fetch('http://localhost:5000/api/accounts');
+                const data = await response.json();
+                
+                const accountSelect = document.getElementById('account');
+                accountSelect.innerHTML = '';
+                
+                data.accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.key;
+                    option.textContent = account.name;
+                    // Select auto-insurance by default
+                    if (account.key === 'auto-insurance') {
+                        option.selected = true;
+                    }
+                    accountSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+                showStatus('Error loading AWS accounts', 'error');
+            }
+        }
+
+        async function setupDomain() {
+            const domainInput = document.getElementById('domain').value.trim();
+            const accountKey = document.getElementById('account').value;
+            
+            if (!domainInput) {
+                showStatus('Please enter at least one domain name', 'error');
+                return;
+            }
+            
+            if (!accountKey) {
+                showStatus('Please select an AWS account', 'error');
+                return;
+            }
+            
+            // Disable button
+            const setupBtn = document.getElementById('setupBtn');
+            setupBtn.disabled = true;
+            
+            // Reset UI
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('domainContainer').innerHTML = '';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/setup-domain', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        domain: domainInput,
+                        account: accountKey
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Clear existing tasks
+                    activeTasks.clear();
+                    
+                    // Initialize UI for multiple domains
+                    initializeMultiDomainUI(data.tasks);
+                    
+                    // Store task IDs
+                    data.tasks.forEach(task => {
+                        activeTasks.set(task.task_id, task.domain);
+                    });
+                    
+                    showStatus(`Started setup for ${data.tasks.length} domain(s) on ${data.tasks[0].account}`, 'info');
+                    
+                    // Start polling for status
+                    statusInterval = setInterval(checkAllStatuses, 2000);
+                } else {
+                    showStatus(data.error || 'Failed to start domain setup', 'error');
+                    setupBtn.disabled = false;
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+                setupBtn.disabled = false;
+            }
+        }
+
+        function initializeMultiDomainUI(tasks) {
+            const container = document.getElementById('domainContainer');
+            
+            // Clear existing content
+            container.innerHTML = '';
+            
+            // Create section for each domain
+            tasks.forEach(task => {
+                const domainSection = document.createElement('div');
+                domainSection.id = `domain-${task.task_id}`;
+                domainSection.className = 'domain-section';
+                domainSection.innerHTML = `
+                    <h3>${task.domain} <span style="color: #666; font-size: 0.8em;">(${task.account})</span></h3>
+                    <div class="progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <p class="progress-text">Initializing...</p>
+                    </div>
+                    <ul class="step-list"></ul>
+                    <div class="manual-steps" style="display: none;">
+                        <h4>Manual Steps Required</h4>
+                        <div class="manual-content"></div>
+                    </div>
+                `;
+                container.appendChild(domainSection);
+            });
+        }
+
+        async function checkAllStatuses() {
+            const allCompleted = [];
+            
+            for (const [taskId, domain] of activeTasks) {
+                try {
+                    const response = await fetch(`http://localhost:5000/api/status/${taskId}`);
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        updateDomainStatusUI(taskId, data);
+                        
+                        if (data.status === 'completed' || data.status === 'failed') {
+                            allCompleted.push(taskId);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error checking status for ${domain}:`, error);
+                }
+            }
+            
+            // Remove completed tasks
+            allCompleted.forEach(taskId => activeTasks.delete(taskId));
+            
+            // Stop polling if all tasks are complete
+            if (activeTasks.size === 0) {
+                clearInterval(statusInterval);
+                document.getElementById('setupBtn').disabled = false;
+                showStatus('All domain setups completed!', 'success');
+            }
+        }
+
+        function updateDomainStatusUI(taskId, data) {
+            const section = document.getElementById(`domain-${taskId}`);
+            if (!section) return;
+            
+            // Update progress text
+            const progressText = section.querySelector('.progress-text');
+            if (data.progress) {
+                progressText.textContent = data.progress;
+            }
+            
+            // Update step list
+            const stepList = section.querySelector('.step-list');
+            stepList.innerHTML = '';
+            
+            const steps = [
+                { key: 'certificate', name: 'SSL Certificate', icon: '🔒' },
+                { key: 'route53_zone', name: 'Route 53 Hosted Zone', icon: '🌐' },
+                { key: 's3_buckets', name: 'S3 Buckets', icon: '🗄️' },
+                { key: 'certificate_validation', name: 'Certificate Validation', icon: '✅' },
+                { key: 'cloudfront', name: 'CloudFront Distribution', icon: '☁️' },
+                { key: 'route53_records', name: 'Route 53 Records', icon: '📝' },
+                { key: 'nameserver_update', name: 'Nameserver Update', icon: '🔄' }
+            ];
+            
+            let completedSteps = 0;
+            
+            steps.forEach(step => {
+                const li = document.createElement('li');
+                li.className = 'step-item';
+                
+                if (data.steps && data.steps[step.key]) {
+                    if (data.steps[step.key].status === 'completed') {
+                        li.className += ' completed';
+                        li.innerHTML = `<span style="color: #28a745;">✓</span> ${step.icon} ${step.name}`;
+                        completedSteps++;
+                    } else if (data.steps[step.key].status === 'in_progress') {
+                        li.className += ' in-progress';
+                        li.innerHTML = `<span style="color: #ffc107;">⟳</span> ${step.icon} ${step.name}`;
+                    } else {
+                        li.innerHTML = `<span style="color: #dc3545;">✗</span> ${step.icon} ${step.name}`;
+                    }
+                } else {
+                    li.innerHTML = `<span style="color: #6c757d;">○</span> ${step.icon} ${step.name}`;
+                }
+                
+                stepList.appendChild(li);
+            });
+            
+            // Update progress bar
+            const progressBar = section.querySelector('.progress-fill');
+            const progress = (completedSteps / steps.length) * 100;
+            progressBar.style.width = progress + '%';
+            
+            // Handle completion
+            if (data.status === 'completed') {
+                showDomainManualSteps(section, data);
+                const domainHeader = section.querySelector('h3');
+                domainHeader.innerHTML = `${data.domain} <span style="color: #28a745;">✓ Completed</span>`;
+            } else if (data.status === 'failed') {
+                const domainHeader = section.querySelector('h3');
+                domainHeader.innerHTML = `${data.domain} <span style="color: #dc3545;">✗ Failed: ${data.error}</span>`;
+            }
+        }
+
+        function showDomainManualSteps(section, data) {
+            const manualSteps = section.querySelector('.manual-steps');
+            const manualContent = section.querySelector('.manual-content');
+            
+            // Check if Namecheap automation succeeded
+            const cnameAutoUpdated = data.namecheap_cname_updated;
+            const nsAutoUpdated = data.namecheap_ns_updated;
+            
+            let html = '<h5>Workflow Summary:</h5>';
+            html += '<ol style="font-size: 0.9em; color: #666;">';
+            html += '<li>SSL Certificate CNAME records are added first</li>';
+            html += '<li>Wait for certificate validation (ISSUED status)</li>';
+            html += '<li>Only after validation, nameservers are updated</li>';
+            html += '</ol>';
+            
+            html += '<h5>DNS Configuration Status:</h5>';
+            html += '<ol>';
+            
+            // CNAME records
+            html += '<li><strong>SSL Certificate CNAME Records:</strong><ul>';
+            if (data.steps.certificate && data.steps.certificate.validation_records && data.steps.certificate.validation_records.length > 0) {
+                if (cnameAutoUpdated) {
+                    html += '<li style="color: #28a745;"><em>✓ CNAME records added automatically to Namecheap</em></li>';
+                } else {
+                    html += '<li style="color: #dc3545;"><strong>Manual action required - Add these CNAME records in Namecheap:</strong></li>';
+                    data.steps.certificate.validation_records.forEach(record => {
+                        html += `<li>Host: <code>${record.name}</code><br>Value: <code>${record.value}</code><br>TTL: 1 minute</li>`;
+                    });
+                }
+            } else {
+                html += '<li><em>No CNAME records needed - certificate already validated</em></li>';
+            }
+            html += '</ul></li>';
+            
+            // Certificate validation status
+            html += '<li><strong>Certificate Validation:</strong><ul>';
+            if (data.steps.certificate_validation && data.steps.certificate_validation.status === 'completed') {
+                html += '<li style="color: #28a745;"><em>✓ Certificate validated successfully</em></li>';
+            } else {
+                html += '<li style="color: #ffc107;"><em>⟳ Waiting for certificate validation...</em></li>';
+            }
+            html += '</ul></li>';
+            
+            // Nameservers
+            html += '<li><strong>Nameservers (Updated after certificate validation):</strong><ul>';
+            if (data.steps.route53_zone && data.steps.route53_zone.nameservers) {
+                if (nsAutoUpdated) {
+                    html += '<li style="color: #28a745;"><em>✓ Nameservers updated automatically in Namecheap</em></li>';
+                    html += '<li>Updated to these Route 53 nameservers:</li>';
+                    data.steps.route53_zone.nameservers.forEach(ns => {
+                        html += `<li><code>${ns}</code></li>`;
+                    });
+                } else {
+                    html += '<li style="color: #dc3545;"><strong>Manual action required - Update nameservers in Namecheap to:</strong></li>';
+                    data.steps.route53_zone.nameservers.forEach(ns => {
+                        html += `<li><code>${ns}</code></li>`;
+                    });
+                }
+            }
+            html += '</ul></li></ol>';
+            
+            manualContent.innerHTML = html;
+            manualSteps.style.display = 'block';
+            
+            // Update header based on automation status
+            const header = manualSteps.querySelector('h4');
+            if (cnameAutoUpdated && nsAutoUpdated) {
+                header.textContent = 'Setup Completed - All DNS Records Updated Automatically';
+                header.style.color = '#28a745';
+            } else if (cnameAutoUpdated || nsAutoUpdated) {
+                header.textContent = 'Partial Automation - Some Manual Steps Required';
+                header.style.color = '#856404';
+            } else {
+                header.textContent = 'Manual Steps Required';
+                header.style.color = '#dc3545';
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
