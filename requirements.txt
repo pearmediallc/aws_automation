@@ -10,4 +10,4 @@ Flask-Login
 Flask-SQLAlchemy
 Werkzeug
 gunicorn>=20.1.0
-
+chardet
