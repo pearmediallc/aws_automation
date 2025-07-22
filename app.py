@@ -30,7 +30,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY must be set in environment variables")
-app.permanent_session_lifetime = timedelta(minutes=2)
+app.permanent_session_lifetime = timedelta(minutes=10)
 
 # Register the w3bcopier Blueprint with a URL prefix
 app.register_blueprint(w3bcopier_bp, url_prefix='/w3bcopier')
