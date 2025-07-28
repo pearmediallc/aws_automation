@@ -117,7 +117,7 @@ def download_css_background_images(soup, base_url, save_dir):
             matches = re.findall(pattern, css_content)
             for match in matches:
                 # Clean up URL (remove quotes, etc.)
-                url = match.strip()
+                url = match[2].strip() if len(match) > 2 else match.strip()
                 if url:
                     bg_urls.append(url)
         
@@ -175,7 +175,7 @@ def download_css_background_images(soup, base_url, save_dir):
     # Function to replace background image URLs in CSS content
     def replace_bg_images(css_content, base_url):
         def replace_url(match):
-            url_group = match.group(1)
+            url_group = match.group(3) if match.lastindex >= 3 else match.group(1)
             if not url_group:
                 return match.group(0)
                 
@@ -273,73 +273,320 @@ def is_tracking_script(script_content):
     
     return False
 
-# def remove_unnecessary_scripts(soup):
-#     """Remove unnecessary <script> tags"""
-#     for script in soup.find_all('script'):
-#         if script.string and is_tracking_script(script.string):
-#             script.decompose()
-              # Remove the script if it matches the tracking patterns
+def normalize_domain(domain):
+    """Normalize domain by removing www. and converting to lowercase"""
+    if not domain:
+        return ''
+    # Remove protocol if present
+    if '://' in domain:
+        domain = domain.split('://', 1)[1]
+    # Remove path if present
+    domain = domain.split('/')[0]
+    # Remove port if present
+    domain = domain.split(':')[0]
+    return domain.lower().replace('www.', '')
 
-# Function to replace external domains with original domain and then replace with replacement domains
-# Replace this function in your app.py file
+def extract_domain_from_url(url):
+    """Extract domain from full URL or domain string"""
+    if not url:
+        return ''
+    
+    # Handle full URLs with protocol
+    if '://' in url:
+        parsed = urlparse(url)
+        return parsed.netloc.lower().replace('www.', '')
+    
+    # Handle protocol-relative URLs
+    if url.startswith('//'):
+        return url[2:].split('/')[0].lower().replace('www.', '')
+    
+    # Handle plain domains
+    return normalize_domain(url)
 
-def remove_external_domains(soup, original_domain, replacement_domains):
-    """Replace exact matches of the original domain, preserving case sensitivity."""
-    preserve_cdns = [
-        'fontawesome.com', 'cdn.jsdelivr.net', 'cdn.tailwindcss.com', 'googleapis.com', 
-        'bootstrap.css', 'bootstrapcdn.com', 'cdn.cloud', 'jquery.com', 
-        'cdnjs.cloudflare.com', 'unpkg.com'
-    ]
+def is_exact_domain_match(url_domain, target_domain):
+    """Check if URL domain exactly matches target domain (ignoring www. and protocol)"""
+    if not url_domain or not target_domain:
+        return False
+    
+    normalized_url = extract_domain_from_url(url_domain)
+    normalized_target = extract_domain_from_url(target_domain)
+    
+    # Exact match only (no subdomains)
+    return normalized_url == normalized_target
 
-    # Step 1: Replace external domains (not equal to original_domain) with the original domain
-    for tag in soup.find_all(['a', 'img', 'script', 'link']):
+def preserve_case_replacement(original_domain, replacement_domain):
+    """Preserve the case pattern of the original domain in the replacement"""
+    if not original_domain or not replacement_domain:
+        return replacement_domain
+    
+    # If replacement is a full URL, return as-is
+    if '://' in replacement_domain:
+        return replacement_domain
+    
+    if original_domain.isupper():
+        return replacement_domain.upper()
+    elif original_domain.islower():
+        return replacement_domain.lower()
+    elif original_domain[0].isupper():
+        return replacement_domain.capitalize()
+    else:
+        return replacement_domain
+
+def replace_original_domains(soup, original_domains, replacement_domains):
+    """Step 1: Replace all original domains with their corresponding replacement domains"""
+    if not original_domains or not replacement_domains:
+        return soup, set()
+    
+    processed_domains = set()
+    
+    for tag in soup.find_all(['a', 'img', 'script', 'link', 'iframe', 'embed', 'object']):
         attr = 'href' if tag.name in ['a', 'link'] else 'src'
         src = tag.get(attr)
         if not src:
             continue
 
-        parsed_url = urlparse(src)
-        domain = parsed_url.netloc
-        domain_lower = domain.lower()  # Use lowercase only for comparison
-
-        if any(cdn in domain_lower for cdn in preserve_cdns):
+        try:
+            parsed_url = urlparse(src)
+            domain = parsed_url.netloc
+            
+            if not domain:  # Skip relative URLs
+                continue
+            
+            # Check if the domain matches any of the original domains
+            for i, orig_domain in enumerate(original_domains):
+                if i < len(replacement_domains) and is_exact_domain_match(domain, orig_domain):
+                    replacement = replacement_domains[i]
+                    
+                    # Handle full URL replacements
+                    if '://' in replacement:
+                        replacement_parsed = urlparse(replacement)
+                        
+                        # If replacement has a path, use the replacement URL structure
+                        if replacement_parsed.path and replacement_parsed.path != '/':
+                            # Use the replacement URL's path, preserving original query/fragment if any
+                            new_url = urlunparse((
+                                replacement_parsed.scheme,
+                                replacement_parsed.netloc,
+                                replacement_parsed.path,  # Use replacement path!
+                                replacement_parsed.params or parsed_url.params,
+                                replacement_parsed.query or parsed_url.query,
+                                replacement_parsed.fragment or parsed_url.fragment
+                            ))
+                        else:
+                            # If replacement has no specific path, preserve original path structure
+                            new_url = urlunparse((
+                                replacement_parsed.scheme,
+                                replacement_parsed.netloc,
+                                parsed_url.path,
+                                parsed_url.params,
+                                parsed_url.query,
+                                parsed_url.fragment
+                            ))
+                        tag[attr] = new_url
+                    else:
+                        # Simple domain replacement
+                        replacement = preserve_case_replacement(domain, replacement)
+                        new_url = src.replace(domain, replacement, 1)
+                        tag[attr] = new_url
+                    
+                    processed_domains.add(normalize_domain(domain))
+                    current_app.logger.info(f"Step 1: Replaced original domain: {domain} -> {replacement} in {src}")
+                    break
+                
+        except Exception as e:
+            current_app.logger.error(f"Error processing URL {src}: {str(e)}")
             continue
 
-        # Only replace if domain != original and NOT a subdomain of original
-        if domain_lower and domain_lower != original_domain.lower() and not domain_lower.endswith(f".{original_domain.lower()}"):
-            # Keep the original case when replacing
-            new_url = src.replace(domain, original_domain)
-            tag[attr] = new_url
+    return soup, processed_domains
 
-    # Step 2: Replace exact original_domain with replacement_domain
-    if replacement_domains:
-        for replacement_domain in replacement_domains:
-            for tag in soup.find_all(['a', 'img', 'script', 'link']):
-                attr = 'href' if tag.name in ['a', 'link'] else 'src'
-                src = tag.get(attr)
-                if not src:
-                    continue
-
-                parsed_url = urlparse(src)
-                domain = parsed_url.netloc
-                domain_lower = domain.lower()  # Use lowercase only for comparison
-
-                # Only replace if it's an exact match (no subdomains)
-                if domain_lower == original_domain.lower():
-                    # Case-sensitive replacement
-                    if domain.isupper():
-                        replacement = replacement_domain.upper()
-                    elif domain.islower():
-                        replacement = replacement_domain.lower()
-                    elif domain[0].isupper():
-                        replacement = replacement_domain.capitalize()
-                    else:
-                        replacement = replacement_domain
-                        
-                    new_url = src.replace(domain, replacement)
-                    tag[attr] = new_url
+def replace_external_domains(soup, original_domain, replacement_domains, processed_domains=None):
+    """Step 2: Replace all external domains with intelligent fallback logic"""
+    if processed_domains is None:
+        processed_domains = set()
+        
+    preserve_cdns = [
+        'fontawesome.com', 'cdn.jsdelivr.net', 'cdn.tailwindcss.com', 'googleapis.com', 
+        'bootstrap.css', 'bootstrapcdn.com', 'cdn.cloud', 'jquery.com', 
+        'cdnjs.cloudflare.com', 'unpkg.com', 'fonts.googleapis.com', 'fonts.gstatic.com'
+    ]
     
+    # Add all replacement domains to the preserve list
+    preserve_domains = preserve_cdns + [extract_domain_from_url(d) for d in replacement_domains if d]
+
+    def should_preserve_domain(domain):
+        """Check if domain should be preserved (CDNs or replacement domains)"""
+        if not domain:
+            return False
+        domain_lower = normalize_domain(domain)
+        return any(preserve in domain_lower for preserve in preserve_domains)
+
+    # Determine fallback replacement strategy
+    if not replacement_domains:
+        fallback_replacement = original_domain
+    elif len(replacement_domains) == 1:
+        fallback_replacement = replacement_domains[0]
+    else:
+        # Use the last replacement domain as fallback for unspecified external domains
+        fallback_replacement = replacement_domains[-1]
+
+    for tag in soup.find_all(['a', 'img', 'script', 'link', 'iframe', 'embed', 'object']):
+        attr = 'href' if tag.name in ['a', 'link'] else 'src'
+        src = tag.get(attr)
+        if not src:
+            continue
+
+        try:
+            parsed_url = urlparse(src)
+            domain = parsed_url.netloc
+            
+            if not domain:  # Skip relative URLs
+                continue
+            
+            # Skip if domain is in preserve list, matches original domain, or already processed
+            normalized_domain = normalize_domain(domain)
+            if (should_preserve_domain(domain) or 
+                is_exact_domain_match(domain, original_domain) or 
+                normalized_domain in processed_domains):
+                continue
+            
+            # Replace external domain with fallback replacement
+            if '://' in fallback_replacement:
+                replacement_parsed = urlparse(fallback_replacement)
+                
+                # If replacement has a path, use the replacement URL structure
+                if replacement_parsed.path and replacement_parsed.path != '/':
+                    # Use the replacement URL's path for external domains too
+                    new_url = urlunparse((
+                        replacement_parsed.scheme,
+                        replacement_parsed.netloc,
+                        replacement_parsed.path,  # Use replacement path!
+                        replacement_parsed.params or parsed_url.params,
+                        replacement_parsed.query or parsed_url.query,
+                        replacement_parsed.fragment or parsed_url.fragment
+                    ))
+                else:
+                    # If replacement has no specific path, preserve original path structure
+                    new_url = urlunparse((
+                        replacement_parsed.scheme,
+                        replacement_parsed.netloc,
+                        parsed_url.path,
+                        parsed_url.params,
+                        parsed_url.query,
+                        parsed_url.fragment
+                    ))
+                tag[attr] = new_url
+            else:
+                # Simple domain replacement
+                replacement = preserve_case_replacement(domain, fallback_replacement)
+                new_url = src.replace(domain, replacement, 1)
+                tag[attr] = new_url
+            
+            current_app.logger.info(f"Step 2: Replaced external domain: {domain} -> {fallback_replacement} in {src}")
+                
+        except Exception as e:
+            current_app.logger.error(f"Error processing URL {src}: {str(e)}")
+            continue
+
     return soup
+
+def replace_text_content(text, original_domains, replacement_domains):
+    """
+    Replace domains in text content with proper domain matching.
+    Enhanced to handle full URLs in replacement domains properly.
+    """
+    if not text or not original_domains or not replacement_domains:
+        return text
+
+    if len(original_domains) != len(replacement_domains):
+        current_app.logger.error("Mismatch between original and replacement domains count")
+        return text
+
+    # Enhanced URL patterns for different contexts
+    url_patterns = [
+        # Full URLs with protocol - capture more parts
+        r'(https?://)(www\.)?([a-zA-Z0-9.-]+)(:[0-9]+)?(/[^\s\'"<>]*)?',
+        # Protocol-relative URLs
+        r'(//)(www\.)?([a-zA-Z0-9.-]+)(:[0-9]+)?(/[^\s\'"<>]*)?',
+        # CSS url() function
+        r'(url\s*\(\s*[\'"]?)(https?://|//)?(?:www\.)?([a-zA-Z0-9.-]+)(:[0-9]+)?(/[^\s\'"<>)]*)?([\'"]?\s*\))',
+        # JavaScript string literals with URLs
+        r'([\'"])(https?://|//)?(?:www\.)?([a-zA-Z0-9.-]+)(:[0-9]+)?(/[^\s\'"<>]*)?([\'"])',
+    ]
+
+    modified_text = text
+    
+    for i, original_domain in enumerate(original_domains):
+        if i >= len(replacement_domains):
+            break
+            
+        replacement_domain = replacement_domains[i]
+        normalized_original = extract_domain_from_url(original_domain)
+        
+        for pattern in url_patterns:
+            def replace_match(match):
+                full_match = match.group(0)
+                groups = match.groups()
+                
+                # Extract domain from the match based on pattern
+                domain_part = None
+                protocol_part = ''
+                path_part = ''
+                
+                if len(groups) >= 3:
+                    if len(groups) >= 5:  # Full URL pattern
+                        protocol_part = groups[0] if groups[0] else ''
+                        www_part = groups[1] if groups[1] else ''
+                        domain_part = (www_part + groups[2]) if groups[2] else ''
+                        path_part = groups[4] if groups[4] else ''
+                    else:
+                        domain_part = groups[2] if groups[2] else ''
+                        if len(groups) > 1 and groups[1]:  # www. part
+                            domain_part = groups[1] + domain_part
+                else:
+                    return full_match
+                
+                if not domain_part:
+                    return full_match
+                
+                # Check if this domain matches our target (exact match only)
+                clean_domain = domain_part.replace('www.', '')
+                if is_exact_domain_match(clean_domain, normalized_original):
+                    # Handle full URL replacements
+                    if '://' in replacement_domain:
+                        replacement_parsed = urlparse(replacement_domain)
+                        
+                        # For full URL replacements in text content
+                        if 'url(' in full_match:
+                            # CSS url() - replace with full URL
+                            return full_match.replace(protocol_part + domain_part + path_part, replacement_domain)
+                        elif full_match.startswith(('http://', 'https://', '//')):
+                            # Full URL context - replace entire URL structure
+                            if replacement_parsed.path and replacement_parsed.path != '/':
+                                # Use replacement URL completely
+                                new_full_url = replacement_domain
+                            else:
+                                # Keep original path if replacement has no specific path
+                                new_full_url = f"{replacement_parsed.scheme}://{replacement_parsed.netloc}{path_part}"
+                            return full_match.replace(protocol_part + domain_part + path_part, new_full_url)
+                        else:
+                            # String context - replace with full URL
+                            return full_match.replace(domain_part + path_part, replacement_domain)
+                    else:
+                        # Simple domain replacement
+                        if domain_part.lower().startswith('www.'):
+                            new_domain = 'www.' + preserve_case_replacement(
+                                domain_part[4:], replacement_domain
+                            )
+                        else:
+                            new_domain = preserve_case_replacement(domain_part, replacement_domain)
+                        
+                        return full_match.replace(domain_part, new_domain, 1)
+                
+                return full_match
+            
+            modified_text = re.sub(pattern, replace_match, modified_text, flags=re.IGNORECASE)
+    
+    return modified_text
 
 def get_file_extension(url, content_type=None):
     """Get file extension from URL or content type"""
@@ -433,98 +680,6 @@ def safe_download(url, save_path):
         print(f'Error downloading {url}: {str(e)}')
         return None
 
-# Function to replace domain in URL
-def replace_domain_in_url(url, original_domains, new_domains, base_url):
-    try:
-        full_url = urljoin(base_url, url)
-        parsed = urlparse(full_url)
-        
-        if not parsed.netloc:
-            return url
-
-        current_domain = parsed.netloc.replace('www.', '')
-        
-        for orig_domain, new_domain in zip(original_domains, new_domains):
-            orig_domain = orig_domain.strip().lower().replace('www.', '')
-            new_domain = new_domain.strip().lower().replace('www.', '')
-            
-            if current_domain == orig_domain:
-                new_url = full_url.replace(parsed.netloc, new_domain)
-                return new_url
-    except:
-        pass
-    return url
-
-
-# Replace this function in your app.py file
-
-def replace_text_content(text, original_domains, replacement_domains):
-    """
-    Replace not just domains but any text content from original to replacement.
-    This preserves case sensitivity during replacement to maintain exact formatting.
-    """
-    if not text:
-        return text
-    
-    # Process each domain/text pair
-    for orig_domain, repl_domain in zip(original_domains, replacement_domains):
-        orig_domain = orig_domain.strip()  # Don't convert to lowercase
-        repl_domain = repl_domain.strip()  # Don't convert to lowercase
-        
-        # Create case-insensitive pattern but use case-sensitive replacement
-        pattern = re.compile(re.escape(orig_domain), re.IGNORECASE)
-        
-        # Custom replacement function to preserve case
-        def match_case(match):
-            matched_text = match.group(0)
-            
-            # If original is all uppercase, make replacement all uppercase
-            if matched_text.isupper():
-                return repl_domain.upper()
-            
-            # If original is all lowercase, make replacement all lowercase
-            elif matched_text.islower():
-                return repl_domain.lower()
-            
-            # If original starts with capital, capitalize replacement
-            elif matched_text[0].isupper():
-                return repl_domain.capitalize()
-            
-            # Otherwise use replacement as is
-            else:
-                return repl_domain
-                
-        # Apply case-preserving replacement
-        text = pattern.sub(match_case, text)
-        
-        # Handle www prefix case-sensitively too
-        www_pattern = re.compile(r'www\.' + re.escape(orig_domain), re.IGNORECASE)
-        
-        def www_match_case(match):
-            matched_text = match.group(0)
-            www_part = matched_text[:4]  # Extract 'www.' part
-            domain_part = matched_text[4:]  # Extract domain part
-            
-            # Apply same case logic to domain part
-            if domain_part.isupper():
-                return www_part + repl_domain.upper()
-            elif domain_part.islower():
-                return www_part + repl_domain.lower()
-            elif domain_part[0].isupper():
-                return www_part + repl_domain.capitalize()
-            else:
-                return www_part + repl_domain
-                
-        text = www_pattern.sub(www_match_case, text)
-        
-        # Replace encoded versions (for JavaScript/JSON content)
-        text = text.replace(f'\\"{orig_domain}\\"', f'\\"{repl_domain}\\"')
-        text = text.replace(f"\\'{orig_domain}\\'", f"\\'{repl_domain}\\'")
-        
-        # Replace URL-encoded versions
-        text = text.replace(f'%22{orig_domain}%22', f'%22{repl_domain}%22')
-    
-    return text
 def download_and_save_asset(url, base_url, save_path, asset_type):
     """Download and save an asset, checking for HTTPS calls in JavaScript files"""
     try:
@@ -736,8 +891,6 @@ def remove_tracking_keywords_from_script(script_content):
     
     return cleaned_script
 
-# Modify this part of your remove_tracking_scripts function in app.py
-
 def remove_tracking_scripts(soup, remove_tracking=False, remove_custom_tracking=False, remove_redirects=False, save_dir=None, base_url=None):
     """Remove tracking-related code from the HTML script content without removing the whole script tag."""
 
@@ -799,7 +952,7 @@ def remove_tracking_scripts(soup, remove_tracking=False, remove_custom_tracking=
 
         # Check if the script has landerlab-* attributes or contains landerlab in content
         if any(attr.startswith('landerlab') for attr in script.attrs):
-            # Only remove if custom tracking removal is enabled (note the changed logic)
+            # Only remove if custom tracking removal is enabled
             if remove_custom_tracking:
                 current_app.logger.info(f"Removing landerlab script: {script}")
                 script.decompose()
@@ -875,14 +1028,6 @@ def remove_tracking_scripts(soup, remove_tracking=False, remove_custom_tracking=
                     if any(keyword in value for keyword in tracking_keywords):
                         del element[attr]
 
-    # Remove links that redirect to external sites (if redirects removal is enabled)
-    # if remove_redirects:
-    #     for link in soup.find_all('a', href=True):
-    #         href = link['href']
-    #         if urlparse(href).netloc and urlparse(href).netloc != urlparse(base_url).netloc:
-    #             current_app.logger.info(f"Removing external redirect link: {href}")
-    #             link.decompose()
-
     # Remove script tags that redirect to external sites (if redirects removal is enabled)
     if remove_redirects:
         for script in soup.find_all('script'):
@@ -892,6 +1037,7 @@ def remove_tracking_scripts(soup, remove_tracking=False, remove_custom_tracking=
                 script.decompose()
                 
     return soup
+
 def detect_encoding(content):
     """Detects the correct encoding of a webpage."""
     # First try to detect encoding from the content
@@ -945,8 +1091,6 @@ def download_and_replace_image(img_url, save_dir, base_url):
         print(f"Error downloading image {img_url}: {str(e)}")
         return None
 
-
-
 def download_and_replace_favicon(favicon_url, save_dir, base_url):
     """Download favicon and return local path"""
     try:
@@ -993,6 +1137,8 @@ def download_assets(soup, base_url, save_dir):
         'bootstrap.com',
         'jquery.com',
         'googleapis.com',
+        'fonts.googleapis.com',
+        'fonts.gstatic.com'
     ]
 
     # Function to check if the URL is from a trusted CDN
@@ -1007,7 +1153,7 @@ def download_assets(soup, base_url, save_dir):
     def should_preserve_cdn(url):
         if not url:
             return False
-        preserve_patterns = ['fontawesome.com', 'bootstrap.com', 'bootstrapcdn.com', 'jquery.com' ,'cdn.tailwindcss.com' ]
+        preserve_patterns = ['fontawesome.com', 'bootstrap.com', 'bootstrapcdn.com', 'jquery.com', 'cdn.tailwindcss.com']
         return any(pattern in url.lower() for pattern in preserve_patterns)
 
     # Create asset directories
@@ -1087,7 +1233,7 @@ def download_assets(soup, base_url, save_dir):
                         current_app.logger.info(f"Downloaded Image locally: {src} -> images/{filename}")
     
     # Download favicon (from <link rel="icon">)
-    for link in soup.find_all('link',  rel=['icon', 'apple-touch-icon']):
+    for link in soup.find_all('link', rel=['icon', 'apple-touch-icon']):
         href = link.get('href')
         if href:
             if href.startswith('/'):
@@ -1114,8 +1260,9 @@ def download_assets(soup, base_url, save_dir):
             if download_and_save_asset(src, base_url, save_path, 'videos'):
                 source['src'] = f'videos/{filename}'  # Update to local relative path
                 current_app.logger.info(f"Downloaded Video locally: {src} -> videos/{filename}")
+
 def download_additional_pages(soup, base_url, save_dir, original_domains, replacement_domains):
-    keywords = ['privacy.html', 'term.html', 'terms.html', 'about.html', 'contact.html' ,'service.html']
+    keywords = ['privacy.html', 'term.html', 'terms.html', 'about.html', 'contact.html', 'service.html']
     downloaded_pages = {}
 
     for a_tag in soup.find_all('a', href=True):
@@ -1134,6 +1281,12 @@ def download_additional_pages(soup, base_url, save_dir, original_domains, replac
                     remove_tracking_scripts(sub_soup, True, True, False, save_dir, full_url)
                     download_assets(sub_soup, full_url, save_dir)
                     sub_soup = download_css_background_images(sub_soup, full_url, save_dir)
+                    
+                    # Step 1: Replace original domains
+                    sub_soup, processed_domains = replace_original_domains(sub_soup, original_domains, replacement_domains)
+                    
+                    # Step 2: Replace external domains
+                    sub_soup = replace_external_domains(sub_soup, urlparse(base_url).netloc, replacement_domains, processed_domains)
                     
                     # Replace domains in content
                     html_content = str(sub_soup)
@@ -1169,7 +1322,7 @@ def health_check():
 def download_website():
     try:
         data = request.json
-        current_app.logger.info('Received data: %s', data)  # Changed to info level
+        current_app.logger.info('Received data: %s', data)
         if not data:
             current_app.logger.error('Invalid JSON data')
             return jsonify({'error': 'Invalid JSON data'}), 400
@@ -1207,17 +1360,10 @@ def download_website():
             if len(original_domains) != len(replacement_domains):
                 current_app.logger.error('Number of original domains must match number of replacement domains')
                 return jsonify({'error': 'Number of original domains must match number of replacement domains'}), 400
-            
-            # DON'T convert domains to lowercase to preserve case
-            # original_domains = [d.strip() for d in original_domains]
-            # replacement_domains = [d.strip() for d in replacement_domains]
-            current_app.logger.info('Original domains (preserving case): %s', original_domains)
-            current_app.logger.info('Replacement domains (preserving case): %s', replacement_domains)
-            # Clean up domain inputs
-            original_domains = [d.strip().lower().replace('www.', '') for d in original_domains]
-            replacement_domains = [d.strip().lower().replace('www.', '') for d in replacement_domains]
-            current_app.logger.info('Cleaned original domains: %s', original_domains)
-            current_app.logger.info('Cleaned replacement domains: %s', replacement_domains)
+
+        # Get the original domain from the URL
+        original_url_domain = urlparse(url).netloc
+        current_app.logger.info('Original URL domain: %s', original_url_domain)
 
         # Step 2: Download the webpage content
         response = requests.get(url, headers={
@@ -1234,10 +1380,7 @@ def download_website():
         html_content = response.content.decode(encoding)
         soup = BeautifulSoup(html_content, 'html.parser')
         
-        # Step 5: Remove unnecessary scripts
-        # remove_unnecessary_scripts(soup)
-
-        # Step 5.5: Always normalize track.js script src by removing query params
+        # Step 5: Always normalize track.js script src by removing query params
         for script in soup.find_all('script'):
             src = script.get('src')
             if src and 'track.js' in src:
@@ -1253,23 +1396,27 @@ def download_website():
         else:
             current_app.logger.info('No tracking removal requested - Skipping tracking script removal')
 
-        # Step 8: Download all assets locally
+        # Step 7: Download all assets locally
         download_assets(soup, url, save_dir)
 
+        # Step 8: Process CSS background images
         soup = download_css_background_images(soup, url, save_dir)
 
+        # Step 9: Download additional pages
         soup = download_additional_pages(soup, url, save_dir, original_domains, replacement_domains)
 
+        # Step 10: Domain replacement (UPDATED WITH FIX)
+        # Step 10.1: First replace all original domains with their corresponding replacement domains
+        current_app.logger.info('Step 1: Replacing original domains with replacement domains')
+        soup, processed_domains = replace_original_domains(soup, original_domains, replacement_domains)
 
-        # Step 9: Replace external domains with the original domain
-        remove_external_domains(soup, urlparse(url).netloc, [])
+        # Step 10.2: Then replace all external domains with intelligent fallback
+        current_app.logger.info('Step 2: Replacing external domains')
+        soup = replace_external_domains(soup, original_url_domain, replacement_domains, processed_domains)
 
-        # Step 10: Replace original domain with replacement domains
-        if replacement_domains:
-            remove_external_domains(soup, urlparse(url).netloc, replacement_domains)
-
-        # Step 11: Full content domain replacement
+        # Step 11: Full content domain replacement in HTML, JS, and CSS files
         if original_domains and replacement_domains:
+            current_app.logger.info('Step 3: Full content domain replacement')
             # Replace in full HTML
             html_raw = str(soup)
             html_raw = replace_text_content(html_raw, original_domains, replacement_domains)
@@ -1286,6 +1433,7 @@ def download_website():
                         content = replace_text_content(content, original_domains, replacement_domains)
                         with open(full_path, 'w', encoding='utf-8', errors='ignore') as f:
                             f.write(content)
+                        current_app.logger.info(f'Processed JS file: {js_file}')
                     except Exception as e:
                         current_app.logger.error(f'Error processing JS file {js_file}: {str(e)}')
 
@@ -1300,10 +1448,11 @@ def download_website():
                         content = replace_text_content(content, original_domains, replacement_domains)
                         with open(full_path, 'w', encoding='utf-8', errors='ignore') as f:
                             f.write(content)
+                        current_app.logger.info(f'Processed CSS file: {css_file}')
                     except Exception as e:
                         current_app.logger.error(f'Error processing CSS file {css_file}: {str(e)}')
                         
-        # Step 12: Inject custom head script if provided (moved here to ensure all removals/replacements are done first)
+        # Step 12: Inject custom head script if provided
         if custom_head_script:
             head = soup.find('head')
             if head:
@@ -1329,12 +1478,12 @@ def download_website():
                     current_app.logger.info('Injected custom head HTML: %s', custom_head_script)
                 else:
                     new_script = soup.new_tag('script')
-                    # Set type first, then src if present in the code (not typical for inline, but for consistency)
                     new_script['type'] = 'text/javascript'
                     new_script.string = custom_head_script_strip
                     head.append(new_script)
                     current_app.logger.info('Injected custom head JS as <script>: %s', custom_head_script)
-        # Step 13: Ensure <script> tags in <head> have type first, then src, then rest
+
+        # Step 13: Ensure <script> tags in <head> have proper attribute ordering
         from collections import OrderedDict
         head = soup.find('head')
         if head:
@@ -1350,22 +1499,22 @@ def download_website():
                     if k not in new_attrs:
                         new_attrs[k] = v
                 script.attrs = new_attrs
+
         # Save final HTML
         with open(os.path.join(save_dir, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(str(soup.prettify()))
         
-
-        # Step 13: Create zip file
+        # Step 14: Create zip file
         zip_name = f'website_{int(time.time())}.zip'
         shutil.make_archive(os.path.splitext(zip_name)[0], 'zip', save_dir)
 
-        # Step 14: Clean up temp directory
+        # Step 15: Clean up temp directory
         try:
             shutil.rmtree(save_dir)
         except Exception as e:
             current_app.logger.error('Error cleaning up temporary directory: %s', str(e))
         
-        # Step 15: Send the zip
+        # Step 16: Send the zip
         if os.path.exists(zip_name):
             response = send_file(zip_name, as_attachment=True, mimetype='application/zip')
             try:
@@ -1379,6 +1528,5 @@ def download_website():
             return jsonify({'error': 'Failed to create zip file'}), 500
 
     except Exception as e:
-        app.logger.error('Exception occurred: %s', str(e))
-
-# The app will be run from app.py
+        current_app.logger.error('Exception occurred: %s', str(e))
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
