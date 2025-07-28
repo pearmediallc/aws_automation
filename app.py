@@ -30,7 +30,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY')
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY must be set in environment variables")
-app.permanent_session_lifetime = timedelta(minutes=10)
+app.permanent_session_lifetime = timedelta(minutes=2)
 
 # Register the w3bcopier Blueprint with a URL prefix
 app.register_blueprint(w3bcopier_bp, url_prefix='/w3bcopier')
@@ -640,6 +640,37 @@ def copy_files():
             region_name=target_config['region']
         )
         
+        # CHECK FOR EXISTING FOLDERS IN TARGET BUCKET
+        existing_folders = []
+        
+        for folder in selected_folders:
+            # Ensure folder ends with a forward slash for proper matching
+            folder_prefix = folder.rstrip('/') + '/'
+            
+            try:
+                # Check if any objects exist with this folder prefix in target bucket
+                response = target_s3.list_objects_v2(
+                    Bucket=target_bucket,
+                    Prefix=folder_prefix,
+                    MaxKeys=1  # We only need to know if at least one object exists
+                )
+                
+                # If Contents exists and has at least one item, folder already exists
+                if 'Contents' in response and len(response['Contents']) > 0:
+                    existing_folders.append(folder.rstrip('/'))
+                    
+            except Exception as e:
+                print(f"Error checking folder existence for {folder}: {str(e)}")
+                # Continue checking other folders even if one fails
+                continue
+        
+        # If any folders already exist, return error
+        if existing_folders:
+            existing_folders_str = "', '".join(existing_folders)
+            return jsonify({
+                'error': f"Cannot copy because the following folder(s) already exist in the target bucket: '{existing_folders_str}'. Please choose a different location or remove the existing folders first."
+            }), 409  # 409 Conflict status code
+        
         # Get list of files to copy
         files_to_copy = []
         
@@ -671,7 +702,7 @@ def copy_files():
                             ):
                                 files_to_copy.append(key)
         
-       # Copy files         
+        # Copy files         
         for file_key in files_to_copy:             
             try:                 
                 # Get the file from source bucket                
@@ -737,7 +768,6 @@ def copy_files():
 
     except Exception as e:         
         return jsonify({'error': str(e)}), 500
-
 @app.route('/api/save-file-content', methods=['POST'])
 def save_file_content():
     """Save content to a specific file in an S3 bucket"""
