@@ -10,4 +10,6 @@ Flask-SQLAlchemy
 Werkzeug
 gunicorn>=20.1.0
 chardet
+wget
 selenium>=4.11.2
+webdriver_manager
