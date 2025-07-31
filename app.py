@@ -195,6 +195,58 @@ def check_existing_resources(domain):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ADD THESE ROUTES to your app.py file (after your existing API routes)
+
+@app.route('/api/w3bcopier/accounts', methods=['GET'])
+@login_required
+def get_w3bcopier_accounts():
+    """Get available AWS accounts for W3bCopier upload"""
+    accounts = []
+    for key, config in Config.AWS_ACCOUNTS.items():
+        accounts.append({
+            'key': key,
+            'name': config['name'],
+            'region': config['region']
+        })
+    return jsonify({'accounts': accounts})
+
+@app.route('/api/w3bcopier/buckets/<account_key>', methods=['GET'])
+@login_required
+def get_w3bcopier_buckets(account_key):
+    """Get S3 buckets for W3bCopier upload"""
+    try:
+        # Validate account key
+        if account_key not in Config.AWS_ACCOUNTS:
+            return jsonify({'error': f'Invalid account: {account_key}'}), 400
+            
+        # Get account credentials
+        account_config = Config.AWS_ACCOUNTS[account_key]
+        access_key_id = account_config['access_key_id']
+        secret_access_key = account_config['secret_access_key']
+        region = account_config['region']
+        
+        # Create S3 client
+        s3_client = boto3.client(
+            's3',
+            region_name=region,
+            aws_access_key_id=access_key_id,
+            aws_secret_access_key=secret_access_key
+        )
+        
+        # List buckets
+        response = s3_client.list_buckets()
+        
+        buckets = []
+        for bucket in response['Buckets']:
+            buckets.append({
+                'name': bucket['Name'],
+                'creation_date': bucket['CreationDate'].isoformat()
+            })
+        
+        return jsonify({'buckets': buckets})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/setup-domain', methods=['POST'])
 def setup_domain():
     """Endpoint to start domain setup (supports multiple domains and accounts)"""
