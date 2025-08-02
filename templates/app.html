@@ -736,6 +736,11 @@
     </div>
     
     <script>
+        // ===== GLOBAL VARIABLES =====
+        let activeDomainTasks = new Map();
+        let domainStatusInterval = null;
+        let debugLog = [];
+        
         // ===== SHARED UTILITIES =====
         // Replace the launchW3bCopier function in app.html with this debug version
 
@@ -767,7 +772,6 @@ function launchW3bCopier() {
     }
 }
         // Debug logging
-        let debugLog = [];
         
         function log(message, data = null) {
             const timestamp = new Date().toISOString();
@@ -938,9 +942,6 @@ function launchW3bCopier() {
         });
         
         // ===== DOMAIN SETUP FUNCTIONALITY =====
-        
-        let activeDomainTasks = new Map();
-        let domainStatusInterval = null;
         
         // Load AWS accounts
         async function loadAccounts() {
@@ -2310,270 +2311,270 @@ function launchW3bCopier() {
     </script>
     <!-- Add this JavaScript to your existing script section -->
 <script>
-    // Monaco Editor Integration for Edit File Tab
-    let monacoFileEditor = null;
-    let currentMonacoContent = '';
-    let isMonacoInitialized = false;
+// Monaco Editor Integration for Edit File Tab
+let monacoFileEditor = null;
+let currentMonacoContent = '';
+let isMonacoInitialized = false;
+
+// Initialize Monaco Editor when the Edit File tab is first clicked
+function initializeMonacoEditor() {
+    if (isMonacoInitialized) return;
     
-    // Initialize Monaco Editor when the Edit File tab is first clicked
-    function initializeMonacoEditor() {
-        if (isMonacoInitialized) return;
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+    
+    require(['vs/editor/editor.main'], function () {
+        monacoFileEditor = monaco.editor.create(document.getElementById('monaco-file-editor'), {
+            value: '// Select a file to start editing\n// Advanced find and replace available with Ctrl+H',
+            language: 'plaintext',
+            theme: 'vs',
+            automaticLayout: true,
+            fontSize: 14,
+            lineNumbers: 'on',
+            roundedSelection: false,
+            scrollBeyondLastLine: false,
+            minimap: {
+                enabled: true
+            },
+            find: {
+                autoFindInSelection: 'never',
+                seedSearchStringFromSelection: 'always'
+            },
+            quickSuggestions: true,
+            wordWrap: 'on',
+            wordWrapColumn: 120
+        });
         
-        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
-        
-        require(['vs/editor/editor.main'], function () {
-            monacoFileEditor = monaco.editor.create(document.getElementById('monaco-file-editor'), {
-                value: '// Select a file to start editing\n// Advanced find and replace available with Ctrl+H',
-                language: 'plaintext',
-                theme: 'vs',
-                automaticLayout: true,
-                fontSize: 14,
-                lineNumbers: 'on',
-                roundedSelection: false,
-                scrollBeyondLastLine: false,
-                minimap: {
-                    enabled: true
-                },
-                find: {
-                    autoFindInSelection: 'never',
-                    seedSearchStringFromSelection: 'always'
-                },
-                quickSuggestions: true,
-                wordWrap: 'on',
-                wordWrapColumn: 120
-            });
-            
-            // Content change handler
-            monacoFileEditor.onDidChangeModelContent(() => {
-                updateMonacoStatusBar();
-                updateMonacoSaveButton();
-            });
-            
-            // Cursor position handler
-            monacoFileEditor.onDidChangeCursorPosition(() => {
-                updateMonacoCursorPosition();
-            });
-            
-            // Language change handler
-            document.getElementById('editor-language').addEventListener('change', function() {
-                if (monacoFileEditor) {
-                    monaco.editor.setModelLanguage(monacoFileEditor.getModel(), this.value);
-                    updateMonacoFileInfo();
-                }
-            });
-            
-            // Theme change handler
-            document.getElementById('editor-theme').addEventListener('change', function() {
-                if (monacoFileEditor) {
-                    monaco.editor.setTheme(this.value);
-                }
-            });
-            
-            // Initialize status
+        // Content change handler
+        monacoFileEditor.onDidChangeModelContent(() => {
             updateMonacoStatusBar();
+            updateMonacoSaveButton();
+        });
+        
+        // Cursor position handler
+        monacoFileEditor.onDidChangeCursorPosition(() => {
             updateMonacoCursorPosition();
-            
-            isMonacoInitialized = true;
-            console.log('Monaco Editor initialized for file editing!');
+        });
+        
+        // Language change handler
+        document.getElementById('editor-language').addEventListener('change', function() {
+            if (monacoFileEditor) {
+                monaco.editor.setModelLanguage(monacoFileEditor.getModel(), this.value);
+                updateMonacoFileInfo();
+            }
+        });
+        
+        // Theme change handler
+        document.getElementById('editor-theme').addEventListener('change', function() {
+            if (monacoFileEditor) {
+                monaco.editor.setTheme(this.value);
+            }
+        });
+        
+        // Initialize status
+        updateMonacoStatusBar();
+        updateMonacoCursorPosition();
+        
+        isMonacoInitialized = true;
+        console.log('Monaco Editor initialized for file editing!');
+    });
+}
+
+// Open Find & Replace in Monaco Editor
+function openEditorFindReplace() {
+    if (monacoFileEditor) {
+        monacoFileEditor.getAction('editor.action.startFindReplaceAction').run();
+        document.getElementById('editor-file-info').textContent = 'Find & Replace opened • Use Ctrl+F for find only, Ctrl+H for find & replace';
+    }
+}
+
+// Update Monaco status bar
+function updateMonacoStatusBar() {
+    if (!monacoFileEditor) return;
+    
+    const model = monacoFileEditor.getModel();
+    const lineCount = model.getLineCount();
+    const charCount = model.getValueLength();
+    
+    document.getElementById('editor-line-count').textContent = lineCount;
+    document.getElementById('editor-char-count').textContent = charCount;
+}
+
+// Update Monaco cursor position
+function updateMonacoCursorPosition() {
+    if (!monacoFileEditor) return;
+    
+    const position = monacoFileEditor.getPosition();
+    document.getElementById('editor-current-line').textContent = position.lineNumber;
+    document.getElementById('editor-current-col').textContent = position.column;
+}
+
+// Update Monaco save button state
+function updateMonacoSaveButton() {
+    if (!monacoFileEditor) return;
+    
+    const hasChanges = monacoFileEditor.getValue() !== currentMonacoContent;
+    const saveBtn = document.getElementById('save-button');
+    saveBtn.disabled = !hasChanges;
+    saveBtn.textContent = hasChanges ? '💾 Save Changes*' : '💾 Save Changes';
+}
+
+// Update Monaco file info
+function updateMonacoFileInfo() {
+    const language = document.getElementById('editor-language').value;
+    document.getElementById('editor-file-info').textContent = `${language.toUpperCase()} file • Use Ctrl+H for advanced Find & Replace`;
+}
+
+// Detect file language from extension
+function detectLanguageFromFile(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    const languageMap = {
+        'html': 'html',
+        'htm': 'html',
+        'css': 'css',
+        'js': 'javascript',
+        'json': 'json',
+        'md': 'markdown',
+        'txt': 'plaintext',
+        'xml': 'xml',
+        'php': 'php',
+        'py': 'python',
+        'java': 'java',
+        'cpp': 'cpp',
+        'c': 'c',
+        'cs': 'csharp',
+        'sql': 'sql'
+    };
+    return languageMap[extension] || 'plaintext';
+}
+
+// Modified loadFileContent function to work with Monaco Editor
+async function loadFileContent(fileKey) {
+    // Initialize Monaco if not already done
+    if (!isMonacoInitialized) {
+        initializeMonacoEditor();
+        // Wait a bit for Monaco to initialize
+        setTimeout(() => loadFileContent(fileKey), 500);
+        return;
+    }
+    
+    const bucketName = document.getElementById('edit-bucket-select').value;
+    const accountKey = document.getElementById('edit-account-select').value;
+    
+    if (!fileKey) {
+        return;
+    }
+    
+    try {
+        showEditStatus('Loading file...', 'info');
+        const { data } = await apiCall(`/api/get-file-content/${accountKey}/${bucketName}/${fileKey}`);
+        
+        // Set content in Monaco Editor
+        monacoFileEditor.setValue(data.content);
+        currentMonacoContent = data.content;
+        
+        // Detect and set language
+        const language = detectLanguageFromFile(fileKey);
+        monaco.editor.setModelLanguage(monacoFileEditor.getModel(), language);
+        document.getElementById('editor-language').value = language;
+        
+        // Update UI elements
+        document.getElementById('editor-current-file').textContent = fileKey;
+        document.getElementById('selected-edit-file').value = fileKey;
+        
+        // Update status
+        updateMonacoStatusBar();
+        updateMonacoSaveButton();
+        updateMonacoFileInfo();
+        
+        // Focus the editor
+        monacoFileEditor.focus();
+        
+        showEditStatus('File loaded successfully in advanced editor', 'success');
+    } catch (error) {
+        console.error('Error:', error);
+        showEditStatus(`Error: ${error.message}`, 'error');
+        if (monacoFileEditor) {
+            monacoFileEditor.setValue('');
+            document.getElementById('save-button').disabled = true;
+        }
+    }
+}
+
+// Modified saveFileContent function to work with Monaco Editor
+async function saveFileContent() {
+    const accountKey = document.getElementById('edit-account-select').value;
+    const bucketName = document.getElementById('edit-bucket-select').value;
+    const fileKey = document.getElementById('selected-edit-file').value;
+    
+    if (!accountKey || !bucketName || !fileKey) {
+        showEditStatus('Please select a file to save', 'error');
+        return;
+    }
+    
+    if (!monacoFileEditor) {
+        showEditStatus('Editor not initialized', 'error');
+        return;
+    }
+    
+    const content = monacoFileEditor.getValue();
+    
+    try {
+        showEditStatus('Saving file...', 'info');
+        
+        const { data } = await apiCall('/api/save-file-content', {
+            method: 'POST',
+            body: JSON.stringify({
+                account: accountKey,
+                bucket: bucketName,
+                file: fileKey,
+                content: content
+            })
+        });
+        
+        currentMonacoContent = content;
+        updateMonacoSaveButton();
+        showEditStatus(data.message || 'File saved successfully', 'success');
+        
+        // Update file info
+        document.getElementById('editor-file-info').textContent = 'File saved successfully! • Use Ctrl+H for Find & Replace';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showEditStatus(`Error: ${error.message}`, 'error');
+    }
+}
+
+// Initialize Monaco Editor when Edit File tab is clicked
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handler for Edit File tab
+    const editFileTab = document.querySelector('[data-tab="edit-file"]');
+    if (editFileTab) {
+        editFileTab.addEventListener('click', function() {
+            // Delay initialization to ensure tab content is visible
+            setTimeout(() => {
+                if (!isMonacoInitialized) {
+                    initializeMonacoEditor();
+                }
+            }, 100);
         });
     }
-    
-    // Open Find & Replace in Monaco Editor
-    function openEditorFindReplace() {
+});
+
+// Add global functions for Monaco Editor integration
+window.monacoFileEditor = {
+    openFindReplace: openEditorFindReplace,
+    getContent: () => monacoFileEditor ? monacoFileEditor.getValue() : '',
+    setContent: (content, language = 'plaintext') => {
         if (monacoFileEditor) {
-            monacoFileEditor.getAction('editor.action.startFindReplaceAction').run();
-            document.getElementById('editor-file-info').textContent = 'Find & Replace opened • Use Ctrl+F for find only, Ctrl+H for find & replace';
-        }
-    }
-    
-    // Update Monaco status bar
-    function updateMonacoStatusBar() {
-        if (!monacoFileEditor) return;
-        
-        const model = monacoFileEditor.getModel();
-        const lineCount = model.getLineCount();
-        const charCount = model.getValueLength();
-        
-        document.getElementById('editor-line-count').textContent = lineCount;
-        document.getElementById('editor-char-count').textContent = charCount;
-    }
-    
-    // Update Monaco cursor position
-    function updateMonacoCursorPosition() {
-        if (!monacoFileEditor) return;
-        
-        const position = monacoFileEditor.getPosition();
-        document.getElementById('editor-current-line').textContent = position.lineNumber;
-        document.getElementById('editor-current-col').textContent = position.column;
-    }
-    
-    // Update Monaco save button state
-    function updateMonacoSaveButton() {
-        if (!monacoFileEditor) return;
-        
-        const hasChanges = monacoFileEditor.getValue() !== currentMonacoContent;
-        const saveBtn = document.getElementById('save-button');
-        saveBtn.disabled = !hasChanges;
-        saveBtn.textContent = hasChanges ? '💾 Save Changes*' : '💾 Save Changes';
-    }
-    
-    // Update Monaco file info
-    function updateMonacoFileInfo() {
-        const language = document.getElementById('editor-language').value;
-        document.getElementById('editor-file-info').textContent = `${language.toUpperCase()} file • Use Ctrl+H for advanced Find & Replace`;
-    }
-    
-    // Detect file language from extension
-    function detectLanguageFromFile(fileName) {
-        const extension = fileName.split('.').pop().toLowerCase();
-        const languageMap = {
-            'html': 'html',
-            'htm': 'html',
-            'css': 'css',
-            'js': 'javascript',
-            'json': 'json',
-            'md': 'markdown',
-            'txt': 'plaintext',
-            'xml': 'xml',
-            'php': 'php',
-            'py': 'python',
-            'java': 'java',
-            'cpp': 'cpp',
-            'c': 'c',
-            'cs': 'csharp',
-            'sql': 'sql'
-        };
-        return languageMap[extension] || 'plaintext';
-    }
-    
-    // Modified loadFileContent function to work with Monaco Editor
-    async function loadFileContent(fileKey) {
-        // Initialize Monaco if not already done
-        if (!isMonacoInitialized) {
-            initializeMonacoEditor();
-            // Wait a bit for Monaco to initialize
-            setTimeout(() => loadFileContent(fileKey), 500);
-            return;
-        }
-        
-        const bucketName = document.getElementById('edit-bucket-select').value;
-        const accountKey = document.getElementById('edit-account-select').value;
-        
-        if (!fileKey) {
-            return;
-        }
-        
-        try {
-            showEditStatus('Loading file...', 'info');
-            const { data } = await apiCall(`/api/get-file-content/${accountKey}/${bucketName}/${fileKey}`);
-            
-            // Set content in Monaco Editor
-            monacoFileEditor.setValue(data.content);
-            currentMonacoContent = data.content;
-            
-            // Detect and set language
-            const language = detectLanguageFromFile(fileKey);
+            monacoFileEditor.setValue(content);
             monaco.editor.setModelLanguage(monacoFileEditor.getModel(), language);
-            document.getElementById('editor-language').value = language;
-            
-            // Update UI elements
-            document.getElementById('editor-current-file').textContent = fileKey;
-            document.getElementById('selected-edit-file').value = fileKey;
-            
-            // Update status
+            currentMonacoContent = content;
             updateMonacoStatusBar();
             updateMonacoSaveButton();
-            updateMonacoFileInfo();
-            
-            // Focus the editor
-            monacoFileEditor.focus();
-            
-            showEditStatus('File loaded successfully in advanced editor', 'success');
-        } catch (error) {
-            console.error('Error:', error);
-            showEditStatus(`Error: ${error.message}`, 'error');
-            if (monacoFileEditor) {
-                monacoFileEditor.setValue('');
-                document.getElementById('save-button').disabled = true;
-            }
         }
-    }
-    
-    // Modified saveFileContent function to work with Monaco Editor
-    async function saveFileContent() {
-        const accountKey = document.getElementById('edit-account-select').value;
-        const bucketName = document.getElementById('edit-bucket-select').value;
-        const fileKey = document.getElementById('selected-edit-file').value;
-        
-        if (!accountKey || !bucketName || !fileKey) {
-            showEditStatus('Please select a file to save', 'error');
-            return;
-        }
-        
-        if (!monacoFileEditor) {
-            showEditStatus('Editor not initialized', 'error');
-            return;
-        }
-        
-        const content = monacoFileEditor.getValue();
-        
-        try {
-            showEditStatus('Saving file...', 'info');
-            
-            const { data } = await apiCall('/api/save-file-content', {
-                method: 'POST',
-                body: JSON.stringify({
-                    account: accountKey,
-                    bucket: bucketName,
-                    file: fileKey,
-                    content: content
-                })
-            });
-            
-            currentMonacoContent = content;
-            updateMonacoSaveButton();
-            showEditStatus(data.message || 'File saved successfully', 'success');
-            
-            // Update file info
-            document.getElementById('editor-file-info').textContent = 'File saved successfully! • Use Ctrl+H for Find & Replace';
-            
-        } catch (error) {
-            console.error('Error:', error);
-            showEditStatus(`Error: ${error.message}`, 'error');
-        }
-    }
-    
-    // Initialize Monaco Editor when Edit File tab is clicked
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add click handler for Edit File tab
-        const editFileTab = document.querySelector('[data-tab="edit-file"]');
-        if (editFileTab) {
-            editFileTab.addEventListener('click', function() {
-                // Delay initialization to ensure tab content is visible
-                setTimeout(() => {
-                    if (!isMonacoInitialized) {
-                        initializeMonacoEditor();
-                    }
-                }, 100);
-            });
-        }
-    });
-    
-    // Add global functions for Monaco Editor integration
-    window.monacoFileEditor = {
-        openFindReplace: openEditorFindReplace,
-        getContent: () => monacoFileEditor ? monacoFileEditor.getValue() : '',
-        setContent: (content, language = 'plaintext') => {
-            if (monacoFileEditor) {
-                monacoFileEditor.setValue(content);
-                monaco.editor.setModelLanguage(monacoFileEditor.getModel(), language);
-                currentMonacoContent = content;
-                updateMonacoStatusBar();
-                updateMonacoSaveButton();
-            }
-        },
-        focus: () => monacoFileEditor ? monacoFileEditor.focus() : null
-    };
-    </script>
+    },
+    focus: () => monacoFileEditor ? monacoFileEditor.focus() : null
+};
+</script>
 </body>
 </html>
