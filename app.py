@@ -913,4 +913,4 @@ if __name__ == '__main__':
     print("  - / (Main Dashboard)")
     print("  - /w3bcopier (Website Scraper)")
     print("  - /login (Authentication)")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5500)

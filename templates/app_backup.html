@@ -1,0 +1,2580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Automation Suite</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .tab:hover {
+            background-color: #e9e9e9;
+        }
+        .tab.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .tab-content {
+            display: none;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .form-select {
+            background-color: white;
+            cursor: pointer;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .progress {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            margin-top: 10px;
+            text-align: center;
+            color: #666;
+        }
+        .step-list {
+            margin-top: 20px;
+            padding: 0;
+            list-style: none;
+        }
+        .step-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #ddd;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .step-item.completed {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .step-item.in-progress {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+            animation: pulse 1.5s infinite;
+        }
+        .step-item.failed {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .domain-section {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .domain-section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .manual-steps {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+        }
+        .manual-steps h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .manual-steps code {
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .option-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .option-button {
+            padding: 10px 20px;
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            flex: 1;
+            text-align: center;
+        }
+        .option-button:hover {
+            background-color: #e9e9e9;
+        }
+        .option-button.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .option-content {
+            display: none;
+        }
+        .option-content.active {
+            display: block;
+        }
+        .debug-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .debug-toggle {
+            margin-top: 10px;
+            padding: 5px 15px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            width: auto;
+        }
+        .folder-item {
+            margin: 5px 0;
+        }
+        .folder-header {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            cursor: pointer;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .folder-header:hover {
+            background-color: #e9e9e9;
+        }
+        .folder-content {
+            margin-left: 20px;
+            padding: 5px;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+            cursor: pointer;
+            margin: 2px 0;
+        }
+        .file-item:hover {
+            background-color: #f0f0f0;
+        }
+        .folder-icon, .file-icon {
+            margin-right: 5px;
+        }
+        .expand-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .expand-all-btn {
+            margin: 10px 0;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .expand-all-btn:hover {
+            background-color: #0056b3;
+        }
+        /* Tree view styles */
+        .tree-item {
+            margin: 2px 0;
+            user-select: none;
+        }
+        .tree-folder {
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+        }
+        .tree-folder:hover {
+            background-color: #e9ecef;
+        }
+        .tree-file {
+            cursor: pointer;
+            padding: 4px 6px;
+            margin-left: 20px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+        }
+        .tree-file:hover {
+            background-color: #e9ecef;
+        }
+        .tree-file.selected {
+            background-color: #007bff;
+            color: white;
+        }
+        .tree-expand {
+            margin-right: 5px;
+            font-size: 12px;
+            width: 15px;
+            display: inline-block;
+            text-align: center;
+        }
+        .tree-icon {
+            margin-right: 5px;
+        }
+        .tree-children {
+            margin-left: 20px;
+            display: none;
+        }
+        .tree-children.expanded {
+            display: block;
+        }
+        * Monaco Editor Integration Styles */
+.editor-container {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.editor-header button:hover {
+    background-color: #5a6268 !important;
+}
+
+.editor-container code {
+    background-color: #f8f9fa;
+    padding: 1px 3px;
+    border-radius: 2px;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+/* Custom scrollbar for Monaco Editor */
+.monaco-editor .monaco-scrollable-element > .scrollbar > .slider {
+    background: rgba(100, 100, 100, 0.4);
+}
+
+.monaco-editor .monaco-scrollable-element > .scrollbar > .slider:hover {
+    background: rgba(100, 100, 100, 0.7);
+}
+
+/* Find widget customization */
+.monaco-editor .find-widget {
+    border: 1px solid #007bff !important;
+    box-shadow: 0 2px 8px rgba(0,123,255,0.2) !important;
+}
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+
+</head>
+<body>
+    <div class="container">
+        <h1>AWS Automation Suite</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="hosting-domain">Hosting Domain</div>
+            <div class="tab" data-tab="script-management">Script Management</div>
+            <div class="tab" data-tab="copy-files">Copy Files</div>
+            <div class="tab" data-tab="scrapper">W3bCopier</div>
+            <div class="tab" data-tab="edit-file">Editing File</div>
+        </div>
+        
+        <!-- Tab 1: Hosting Domain -->
+        <div id="hosting-domain" class="tab-content active">
+            <h2>AWS Domain Hosting</h2>
+            
+            <div class="form-group">
+                <label for="domain-input">Domain Name(s):</label>
+                <input type="text" id="domain-input" placeholder="Enter domain name (e.g., example.com) or multiple domains separated by commas">
+            </div>
+            
+            <div class="form-group">
+                <label for="account-select">AWS Account:</label>
+                <select id="account-select" class="form-select">
+                    <option value="">Loading accounts...</option>
+                </select>
+            </div>
+            
+            <button id="setup-button" onclick="setupDomain()">Setup Domain</button>
+            
+            <div id="status-message" class="status"></div>
+            
+            <div id="progress-container" class="progress">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="progress-text" class="progress-text">Initializing...</div>
+            </div>
+            
+            <div id="domain-status-container"></div>
+            
+            <button class="debug-toggle" onclick="toggleDebug()">Toggle Debug Info</button>
+            <div id="debugInfo" class="debug-info" style="display: none;"></div>
+        </div>
+        
+        <!-- Tab 2: Script Management -->
+        <div id="script-management" class="tab-content">
+            <h2>Script Management</h2>
+            
+            <div class="form-group">
+                <label for="script-account-select">Select AWS Account:</label>
+                <select id="script-account-select" class="form-select">
+                    <option value="">Loading accounts...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="bucket-select">Select Bucket:</label>
+                <select id="bucket-select" class="form-select">
+                    <option value="">Loading buckets...</option>
+                </select>
+            </div>
+            
+            <div id="file-browser" class="form-group" style="display: none;">
+                <label>Files in Bucket:</label>
+                <div class="file-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                    <div id="file-list-content">Loading files...</div>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label for="selected-file">Selected File:</label>
+                    <input type="text" id="selected-file" readonly>
+                </div>
+            </div>
+            
+            <div class="option-buttons">
+                <div class="option-button active" data-option="replace-script">Replace Script</div>
+                <div class="option-button" data-option="add-script">Add New Script</div>
+            </div>
+            
+            <!-- Replace Script Option -->
+            <div id="replace-script" class="option-content active">
+                <div class="form-group">
+                    <label for="find-text">Find Text:</label>
+                    <textarea id="find-text" rows="4" placeholder="Enter the text to find and replace"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="replace-text">Replace With:</label>
+                    <textarea id="replace-text" rows="4" placeholder="Enter the replacement text"></textarea>
+                </div>
+                
+                <button id="replace-button" onclick="replaceScript()">Replace Script</button>
+            </div>
+            
+            <!-- Add Script Option -->
+            <div id="add-script" class="option-content">
+                <div class="form-group">
+                    <label>Location:</label>
+                    <div class="option-buttons">
+                        <div class="option-button active" data-script-location="head">Head</div>
+                        <div class="option-button" data-script-location="body">Body</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="new-script">New Script:</label>
+                    <textarea id="new-script" rows="6" placeholder="Enter the script to add"></textarea>
+                </div>
+                
+                <button id="add-script-button" onclick="addScript()">Add Script</button>
+            </div>
+            
+            <div id="script-status" class="status"></div>
+        </div>
+        
+        <!-- Tab 3: Copy Files -->
+        <div id="copy-files" class="tab-content">
+            <h2>Copy Files to New Bucket</h2>
+            
+            <div class="form-group">
+                <label for="source-account-select">Source AWS Account:</label>
+                <select id="source-account-select" class="form-select">
+                    <option value="">Loading accounts...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="source-bucket-select">Source Bucket:</label>
+                <select id="source-bucket-select" class="form-select">
+                    <option value="">Loading buckets...</option>
+                </select>
+            </div>
+            
+            <div id="source-file-browser" class="form-group" style="display: none;">
+                <label>Files/Folders in Source Bucket:</label>
+                <div class="file-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
+                    <div id="source-file-list-content">Loading files...</div>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Selected Items:</label>
+                    <div id="selected-items" style="border: 1px solid #ddd; padding: 10px; border-radius: 4px; min-height: 50px;">
+                        No items selected
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="target-account-select">Target AWS Account:</label>
+                <select id="target-account-select" class="form-select">
+                    <option value="">Loading accounts...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="target-bucket-select">Target Bucket:</label>
+                <select id="target-bucket-select" class="form-select">
+                    <option value="">Loading buckets...</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Domain Name Replacement:</label>
+                <p style="margin-bottom: 10px;">Domain names will be automatically extracted from the bucket names and replaced in all files.</p>
+                <div class="checkbox-group" style="margin-top: 10px;">
+                    <label><input type="checkbox" id="replace-domain-variations" checked> Also replace domain name variations (e.g., 'autoguard', 'auto guard')</label>
+                </div>
+                <div class="checkbox-group" style="margin-top: 5px;">
+                    <label><input type="checkbox" id="preserve-case" checked> Preserve case patterns during replacement</label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Custom Search and Replace (Optional):</label>
+                <div class="checkbox-group" style="margin-top: 10px;">
+                    <label><input type="checkbox" id="enable-search-replace"> Enable custom search and replace</label>
+                </div>
+                <div id="search-replace-container" style="display: none; margin-top: 10px;">
+                    <div class="form-group">
+                        <label for="search-terms">Search Terms (comma-separated):</label>
+                        <input type="text" id="search-terms" class="form-control" placeholder="e.g., old text 1, old text 2">
+                        <small class="form-text text-muted">Enter exact text to search for, separated by commas. Case-sensitive.</small>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label for="replace-terms">Replace With (comma-separated):</label>
+                        <input type="text" id="replace-terms" class="form-control" placeholder="e.g., new text 1, new text 2">
+                        <small class="form-text text-muted">Enter replacement text in the same order as search terms.</small>
+                    </div>
+                    <div class="form-group" style="margin-top: 10px;">
+                        <label>Apply Search/Replace to Folders:</label>
+                        <div id="search-replace-folders" class="folder-list" style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px; margin-top: 5px;">
+                            <div class="text-muted">Select folders above first</div>
+                        </div>
+                        <small class="form-text text-muted">Search and replace will only be applied to files in selected folders.</small>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="copy-button" onclick="copyFilesAndFolders()" disabled>Copy Selected Items</button>
+            
+            <div id="copy-status" class="status"></div>
+            
+            <div id="copy-progress-container" class="progress" style="display: none;">
+                <div class="progress-bar">
+                    <div id="copy-progress-fill" class="progress-fill"></div>
+                </div>
+                <div id="copy-progress-text" class="progress-text">Copying files...</div>
+            </div>
+        </div>
+        
+     <!-- Tab 4: W3bCopier Scraper -->
+     <div id="scrapper" class="tab-content">
+        <h2>W3bCopier - Website Scraper</h2>
+        <p>Advanced website copying and cloning tool.</p>
+        
+        <div style="text-align: center; margin-top: 50px;">
+            <button id="launch-w3bcopier" onclick="launchW3bCopier()" style="
+                background: linear-gradient(135deg, #007bff, #0056b3);
+                color: white;
+                padding: 20px 40px;
+                border: none;
+                border-radius: 8px;
+                font-size: 18px;
+                font-weight: bold;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+                transition: all 0.3s ease;
+                width: 300px;
+            " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 123, 255, 0.4)'"
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 123, 255, 0.3)'">
+                🚀 Launch W3bCopier
+            </button>
+            
+            <p style="color: #666; margin-top: 20px; font-style: italic;">
+                Click to access the advanced website scraping interface
+            </p>
+        </div>
+    </div>
+
+     <!-- Replace your existing "Tab 5: Editing File" section with this -->
+<div id="edit-file" class="tab-content">
+    <h2>Edit File with Advanced Editor</h2>
+    
+    <div class="form-group">
+        <label for="edit-account-select">AWS Account:</label>
+        <select id="edit-account-select" class="form-select">
+            <option value="">Loading accounts...</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="edit-bucket-select">Bucket:</label>
+        <select id="edit-bucket-select" class="form-select">
+            <option value="">Loading buckets...</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label>Browse Files:</label>
+        <div id="file-tree-container" style="border: 1px solid #ddd; border-radius: 4px; padding: 10px; max-height: 400px; overflow-y: auto; background-color: #f9f9f9;">
+            <div id="file-tree">Loading...</div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label for="selected-edit-file">Selected File:</label>
+        <input type="text" id="selected-edit-file" readonly placeholder="No file selected">
+    </div>
+
+    <!-- Enhanced Editor Section -->
+    <div class="form-group" style="margin-top: 20px;">
+        <div class="editor-container" style="background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+            
+            <!-- Editor Header -->
+            <div class="editor-header" style="background: #f8f9fa; padding: 10px 15px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center;">
+                <div class="editor-title" style="font-weight: bold; color: #333;">
+                    📄 <span id="editor-current-file">No file selected</span>
+                </div>
+                <div class="editor-actions" style="display: flex; gap: 10px;">
+                    <select id="editor-language" style="padding: 5px 10px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px;">
+                        <option value="html">HTML</option>
+                        <option value="css">CSS</option>
+                        <option value="javascript">JavaScript</option>
+                        <option value="json">JSON</option>
+                        <option value="markdown">Markdown</option>
+                        <option value="plaintext">Plain Text</option>
+                    </select>
+                    <select id="editor-theme" style="padding: 5px 10px; border: 1px solid #ddd; border-radius: 3px; font-size: 12px;">
+                        <option value="vs">Light</option>
+                        <option value="vs-dark">Dark</option>
+                        <option value="hc-black">High Contrast</option>
+                    </select>
+                    <button onclick="openEditorFindReplace()" style="padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 3px; font-size: 12px; cursor: pointer;">
+                        🔍 Find & Replace (Ctrl+H)
+                    </button>
+                </div>
+            </div>
+            
+            <!-- File Info Bar -->
+            <div class="file-info-bar" style="padding: 8px 15px; background: #e9ecef; border-bottom: 1px solid #ddd; font-size: 12px; color: #6c757d;">
+                <span id="editor-file-info">Select a file to start editing • Advanced search and replace available</span>
+            </div>
+            
+            <!-- Monaco Editor Container -->
+            <div class="editor-wrapper" style="height: 500px; position: relative;">
+                <div id="monaco-file-editor" style="height: 100%; width: 100%;"></div>
+            </div>
+            
+            <!-- Status Bar -->
+            <div class="editor-status-bar" style="padding: 6px 15px; background: #f8f9fa; border-top: 1px solid #ddd; font-size: 11px; color: #6c757d; display: flex; justify-content: space-between;">
+                <div>
+                    <span>Lines: <span id="editor-line-count">0</span></span> • 
+                    <span>Characters: <span id="editor-char-count">0</span></span> •
+                    <span id="editor-encoding">UTF-8</span>
+                </div>
+                <div>
+                    <span>Ln <span id="editor-current-line">1</span>, Col <span id="editor-current-col">1</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Enhanced Find & Replace Help -->
+    <div class="form-group" style="margin-top: 15px;">
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 12px;">
+            <h4 style="margin: 0 0 10px 0; color: #856404; font-size: 14px;">🎯 Advanced Find & Replace Shortcuts</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 12px;">
+                <div>
+                    <strong>Basic Search:</strong><br>
+                    • <code>Ctrl+F</code> - Find<br>
+                    • <code>Ctrl+H</code> - Find & Replace<br>
+                    • <code>F3</code> - Find Next<br>
+                    • <code>Shift+F3</code> - Find Previous
+                </div>
+                <div>
+                    <strong>Advanced Selection:</strong><br>
+                    • <code>Ctrl+D</code> - Add Next Match<br>
+                    • <code>Ctrl+Shift+L</code> - Select All Matches<br>
+                    • <code>Alt+Enter</code> - Select All Find Matches<br>
+                    • <code>Esc</code> - Close Find Widget
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button id="save-button" onclick="saveFileContent()" disabled style="margin-top: 15px;">💾 Save Changes</button>
+    
+    <div id="edit-status" class="status"></div>
+</div>
+    </div>
+    
+    <script>
+        // ===== GLOBAL VARIABLES =====
+        let activeDomainTasks = new Map();
+        let domainStatusInterval = null;
+        let debugLog = [];
+        
+        // ===== SHARED UTILITIES =====
+        // Replace the launchW3bCopier function in app.html with this debug version
+
+function launchW3bCopier() {
+    console.log('Launch button clicked'); // Check browser console
+    
+    try {
+        // Test if we can access the current origin
+        console.log('Current origin:', window.location.origin);
+        
+        // Construct the URL
+        const url = window.location.origin + '/w3bcopier';
+        console.log('Opening URL:', url);
+        
+        // Try opening the new window
+        const newWindow = window.open(url, '_blank');
+        
+        if (newWindow) {
+            console.log('Window opened successfully');
+        } else {
+            console.error('Failed to open window - popup blocked?');
+            // Fallback: try redirecting in same tab
+            window.location.href = url;
+        }
+    } catch (error) {
+        console.error('Error in launchW3bCopier:', error);
+        // Fallback
+        window.location.href = '/w3bcopier';
+    }
+}
+        // Debug logging
+        
+        function log(message, data = null) {
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] ${message}`;
+            console.log(logEntry, data);
+            
+            debugLog.push(logEntry);
+            if (data) {
+                debugLog.push(JSON.stringify(data, null, 2));
+            }
+            
+            if (debugLog.length > 100) {
+                debugLog = debugLog.slice(-100);
+            }
+            
+            updateDebugDisplay();
+        }
+        
+        function updateDebugDisplay() {
+            const debugDiv = document.getElementById('debugInfo');
+            if (debugDiv) {
+                debugDiv.textContent = debugLog.join('\n');
+                debugDiv.scrollTop = debugDiv.scrollHeight;
+            }
+        }
+        
+        function toggleDebug() {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Get the correct base URL
+        function getBaseUrl() {
+            const currentOrigin = window.location.origin;
+            log(`Current origin: ${currentOrigin}`);
+            
+            if (currentOrigin.startsWith('file://')) {
+                return 'http://localhost:5000';
+            }
+            
+            return currentOrigin;
+        }
+        
+        // Enhanced fetch with better error handling
+        async function apiCall(endpoint, options = {}) {
+            const baseUrl = getBaseUrl();
+            const url = `${baseUrl}${endpoint}`;
+            
+            log(`Making API call to: ${url}`);
+            
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    }
+                });
+                
+                log(`Response status: ${response.status} ${response.statusText}`);
+                
+                let data;
+                const contentType = response.headers.get('content-type');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    const text = await response.text();
+                    log(`Non-JSON response: ${text}`);
+                    throw new Error(`Server returned non-JSON response: ${text}`);
+                }
+                
+                log(`Response data:`, data);
+                
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return { response, data };
+                
+            } catch (error) {
+                log(`API call failed: ${error.message}`);
+                throw error;
+            }
+        }
+        
+        // ===== TAB SWITCHING =====
+        
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs and content
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked tab and corresponding content
+                tab.classList.add('active');
+                const tabId = tab.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Option Switching
+        document.querySelectorAll('.option-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const parent = this.parentElement;
+                const optionType = this.getAttribute('data-option') || this.getAttribute('data-script-location');
+                
+                // Remove active class from all buttons in this group
+                parent.querySelectorAll('.option-button').forEach(b => b.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Show the selected option content if applicable
+                if (this.getAttribute('data-option')) {
+                    document.querySelectorAll('.option-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(optionType)?.classList.add('active');
+                }
+            });
+        });
+        
+        // ===== INITIALIZATION =====
+        
+        // Load accounts when page loads
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadAccounts();
+        });
+
+        // ===== EVENT LISTENERS =====
+        
+        // Script Management events
+        document.getElementById('script-account-select').addEventListener('change', function() {
+            loadBuckets(this.value);
+        });
+        
+        document.getElementById('bucket-select').addEventListener('change', function() {
+            const bucketName = this.value;
+            const accountKey = document.getElementById('script-account-select').value;
+            loadBucketFiles(bucketName, accountKey);
+        });
+        
+        // Copy Files events
+        document.getElementById('source-account-select').addEventListener('change', function() {
+            loadSourceBuckets(this.value);
+        });
+        
+        document.getElementById('source-bucket-select').addEventListener('change', function() {
+            const accountKey = document.getElementById('source-account-select').value;
+            loadSourceFiles(this.value, accountKey);
+        });
+        
+        document.getElementById('target-account-select').addEventListener('change', function() {
+            loadTargetBuckets(this.value);
+        });
+        
+        // Edit File events
+        document.getElementById('edit-account-select').addEventListener('change', function() {
+            loadEditBuckets(this.value);
+        });
+        
+        document.getElementById('edit-bucket-select').addEventListener('change', function() {
+            loadFileTree(this.value, document.getElementById('edit-account-select').value);
+        });
+        
+        // Enable save button when file content changes
+        document.getElementById('file-content').addEventListener('input', function() {
+            document.getElementById('save-button').disabled = false;
+        });
+        
+        // ===== DOMAIN SETUP FUNCTIONALITY =====
+        
+        // Load AWS accounts
+        async function loadAccounts() {
+            try {
+                log('Loading AWS accounts...');
+                const { data } = await apiCall('/api/accounts');
+                
+                const accountSelects = [
+                    document.getElementById('account-select'),
+                    document.getElementById('script-account-select'),
+                    document.getElementById('source-account-select'),
+                    document.getElementById('target-account-select'),
+                    document.getElementById('edit-account-select')
+                ];
+                
+                // Clear all account selects
+                accountSelects.forEach(select => {
+                    if (select) {
+                        select.innerHTML = '';
+                        
+                        // Add default empty option
+                        const emptyOption = document.createElement('option');
+                        emptyOption.value = '';
+                        emptyOption.textContent = '-- Select an AWS account --';
+                        select.appendChild(emptyOption);
+                    }
+                });
+                
+                // Check if accounts exist in the response
+                if (data.accounts && Array.isArray(data.accounts) && data.accounts.length > 0) {
+                    data.accounts.forEach(account => {
+                        const option = document.createElement('option');
+                        option.value = account.key;
+                        option.textContent = `${account.name} (${account.region})`;
+                        
+                        // Add to all account selects
+                        accountSelects.forEach(select => {
+                            if (select) {
+                                select.appendChild(option.cloneNode(true));
+                            }
+                        });
+                    });
+                    
+                    // Set default values if only one account is available
+                    if (data.accounts.length === 1) {
+                        const defaultAccount = data.accounts[0].key;
+                        accountSelects.forEach(select => {
+                            if (select) {
+                                select.value = defaultAccount;
+                                // Trigger change event to load buckets
+                                select.dispatchEvent(new Event('change'));
+                            }
+                        });
+                    }
+                }
+                
+                log(`Loaded ${data.accounts.length} AWS accounts`);
+                
+            } catch (error) {
+                log(`Error loading accounts: ${error.message}`);
+                showStatus('Failed to load AWS accounts. Please refresh the page.', 'error');
+            }
+        }
+
+        // Setup Domain
+        async function setupDomain() {
+            const domainInput = document.getElementById('domain-input').value.trim();
+            const accountSelect = document.getElementById('account-select');
+            const accountKey = accountSelect.value;
+
+            log(`Setup domain called with: domain="${domainInput}", account="${accountKey}"`);
+
+            if (!domainInput) {
+                showStatus('Please enter a domain name', 'error');
+                return;
+            }
+
+            if (!accountKey) {
+                showStatus('Please select an AWS account', 'error');
+                return;
+            }
+            
+            // Disable form
+            document.getElementById('domain-input').disabled = true;
+            document.getElementById('account-select').disabled = true;
+            document.getElementById('setup-button').disabled = true;
+            
+            // Show progress
+            document.getElementById('progress-container').style.display = 'block';
+            document.getElementById('progress-fill').style.width = '10%';
+            document.getElementById('progress-text').textContent = 'Starting domain setup...';
+            
+            try {
+                log('Starting domain setup...');
+                showStatus('Setting up domain...', 'info');
+                
+                const { data } = await apiCall('/api/setup-domain', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        domain: domainInput,
+                        account: accountKey
+                    })
+                });
+                
+                log('Domain setup response received:', data);
+                
+                // Handle different response formats
+                if (data.tasks && Array.isArray(data.tasks)) {
+                    // Multiple domains response
+                    log(`Received ${data.tasks.length} tasks`);
+                    
+                    activeDomainTasks.clear();
+                    initializeMultiDomainUI(data.tasks);
+                    
+                    data.tasks.forEach(task => {
+                        activeDomainTasks.set(task.task_id, task.domain);
+                    });
+                    
+                    showStatus(`Started setup for ${data.tasks.length} domain(s)`, 'info');
+                    domainStatusInterval = setInterval(checkAllStatuses, 3000);
+                    
+                } else if (data.task_id) {
+                    // Single domain response
+                    log(`Received single task: ${data.task_id}`);
+                    
+                    activeDomainTasks.clear();
+                    activeDomainTasks.set(data.task_id, domainInput);
+                    
+                    initializeSingleDomainUI(data.task_id, domainInput, accountKey);
+                    showStatus(`Started setup for ${domainInput}`, 'info');
+                    domainStatusInterval = setInterval(checkAllStatuses, 3000);
+                    
+                } else {
+                    // Direct completion response
+                    log('Received direct completion response');
+                    document.getElementById('progress-fill').style.width = '100%';
+                    document.getElementById('progress-text').textContent = 'Domain setup completed!';
+                    showStatus(data.message || 'Domain setup completed successfully!', 'success');
+                    resetDomainForm();
+                }
+                
+            } catch (error) {
+                log(`Setup domain error: ${error.message}`);
+                document.getElementById('progress-fill').style.width = '100%';
+                document.getElementById('progress-fill').style.backgroundColor = '#dc3545';
+                document.getElementById('progress-text').textContent = 'Setup failed';
+                showStatus(`Error: ${error.message}`, 'error');
+                resetDomainForm();
+            }
+        }
+        
+        function initializeSingleDomainUI(taskId, domain, account) {
+            const task = { task_id: taskId, domain: domain, account: account };
+            initializeMultiDomainUI([task]);
+        }
+
+        function initializeMultiDomainUI(tasks) {
+            const container = document.getElementById('domain-status-container');
+            
+            log(`Initializing UI for ${tasks.length} tasks`);
+            
+            // Clear existing content
+            container.innerHTML = '';
+            
+            // Create section for each domain
+            tasks.forEach(task => {
+                log(`Creating UI for task: ${task.task_id} - ${task.domain}`);
+                
+                const domainSection = document.createElement('div');
+                domainSection.id = `domain-${task.task_id}`;
+                domainSection.className = 'domain-section';
+                domainSection.innerHTML = `
+                    <h3>${task.domain} <span style="color: #666; font-size: 0.8em;">(${task.account || 'Unknown Account'})</span></h3>
+                    <div class="progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 0%;"></div>
+                        </div>
+                        <p class="progress-text">Initializing...</p>
+                    </div>
+                    <ul class="step-list"></ul>
+                    <div class="manual-steps" style="display: none;">
+                        <h4>Manual Steps Required</h4>
+                        <div class="manual-content"></div>
+                    </div>
+                `;
+                container.appendChild(domainSection);
+            });
+        }
+
+        async function checkAllStatuses() {
+            const allCompleted = [];
+            
+            log(`Checking status for ${activeDomainTasks.size} active tasks`);
+            
+            for (const [taskId, domain] of activeDomainTasks) {
+                try {
+                    log(`Checking status for task ${taskId} (${domain})`);
+                    
+                    const { data } = await apiCall(`/api/status/${taskId}`);
+                    
+                    log(`Status for ${taskId}:`, data);
+                    updateDomainStatusUI(taskId, data);
+                    
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        log(`Task ${taskId} completed with status: ${data.status}`);
+                        allCompleted.push(taskId);
+                    }
+                    
+                } catch (error) {
+                    log(`Error checking status for ${domain} (${taskId}): ${error.message}`);
+                }
+            }
+            
+            // Remove completed tasks
+            allCompleted.forEach(taskId => {
+                log(`Removing completed task: ${taskId}`);
+                activeDomainTasks.delete(taskId);
+            });
+            
+            // Stop polling if all tasks are complete
+            if (activeDomainTasks.size === 0) {
+                log('All tasks completed, stopping status polling');
+                clearInterval(domainStatusInterval);
+                domainStatusInterval = null;
+                resetDomainForm();
+                showStatus('All domain setups completed!', 'success');
+            }
+        }
+
+        function updateDomainStatusUI(taskId, data) {
+            const section = document.getElementById(`domain-${taskId}`);
+            if (!section) {
+                log(`Section not found for task ${taskId}`);
+                return;
+            }
+            
+            // Update progress text
+            const progressText = section.querySelector('.progress-text');
+            if (data.progress) {
+                progressText.textContent = data.progress;
+            } else if (data.message) {
+                progressText.textContent = data.message;
+            }
+            
+            // Update step list
+            const stepList = section.querySelector('.step-list');
+            stepList.innerHTML = '';
+            
+            const steps = [
+                { key: 'certificate', name: 'SSL Certificate', icon: '🔒' },
+                { key: 'route53_zone', name: 'Route 53 Hosted Zone', icon: '🌐' },
+                { key: 's3_buckets', name: 'S3 Buckets', icon: '🗄️' },
+                { key: 'certificate_validation', name: 'Certificate Validation', icon: '✅' },
+                { key: 'cloudfront', name: 'CloudFront Distribution', icon: '☁️' },
+                { key: 'route53_records', name: 'Route 53 Records', icon: '📝' },
+                { key: 'nameserver_update', name: 'Nameserver Update', icon: '🔄' }
+            ];
+            
+            let completedSteps = 0;
+            
+            steps.forEach(step => {
+                const li = document.createElement('li');
+                li.className = 'step-item';
+                
+                if (data.steps && data.steps[step.key]) {
+                    if (data.steps[step.key].status === 'completed') {
+                        li.className += ' completed';
+                        li.innerHTML = `<span style="color: #28a745;">✓</span> ${step.icon} ${step.name}`;
+                        completedSteps++;
+                    } else if (data.steps[step.key].status === 'in_progress') {
+                        li.className += ' in-progress';
+                        li.innerHTML = `<span style="color: #ffc107;">⟳</span> ${step.icon} ${step.name}`;
+                    } else if (data.steps[step.key].status === 'failed') {
+                        li.className += ' failed';
+                        li.innerHTML = `<span style="color: #dc3545;">✗</span> ${step.icon} ${step.name}`;
+                    } else {
+                        li.innerHTML = `<span style="color: #6c757d;">○</span> ${step.icon} ${step.name}`;
+                    }
+                } else {
+                    li.innerHTML = `<span style="color: #6c757d;">○</span> ${step.icon} ${step.name}`;
+                }
+                
+                stepList.appendChild(li);
+            });
+            
+            // Update progress bar
+            const progressBar = section.querySelector('.progress-fill');
+            const progress = (completedSteps / steps.length) * 100;
+            progressBar.style.width = progress + '%';
+            
+            // Handle completion
+            if (data.status === 'completed') {
+                progressBar.style.width = '100%';
+                showDomainManualSteps(section, data);
+                const domainHeader = section.querySelector('h3');
+                domainHeader.innerHTML = `${data.domain || taskId} <span style="color: #28a745;">✓ Completed</span>`;
+            } else if (data.status === 'failed') {
+                progressBar.style.width = '100%';
+                progressBar.style.backgroundColor = '#dc3545';
+                const domainHeader = section.querySelector('h3');
+                domainHeader.innerHTML = `${data.domain || taskId} <span style="color: #dc3545;">✗ Failed: ${data.error || 'Unknown error'}</span>`;
+            }
+        }
+
+        function showDomainManualSteps(section, data) {
+            const manualSteps = section.querySelector('.manual-steps');
+            const manualContent = section.querySelector('.manual-content');
+            
+            // Check if Namecheap automation succeeded
+            const cnameAutoUpdated = data.namecheap_cname_updated || false;
+            const nsAutoUpdated = data.namecheap_ns_updated || data.namecheap_updated || false;
+            
+            let html = '<h5>Setup Summary:</h5>';
+            html += '<p>Your domain has been configured with AWS infrastructure.</p>';
+            
+            // Final status
+            if (cnameAutoUpdated && nsAutoUpdated) {
+                html += '<p style="color: #28a745; font-weight: bold;">🎉 Setup completed successfully! Your domain should be accessible within 5-10 minutes.</p>';
+            } else {
+                html += '<p style="color: #856404; font-weight: bold;">⚠️ Please complete the manual steps in your Namecheap dashboard.</p>';
+            }
+            
+            manualContent.innerHTML = html;
+            manualSteps.style.display = 'block';
+        }
+        
+        function showStatus(message, type) {
+            const statusElement = document.getElementById('status-message');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = 'block';
+            
+            log(`Status: [${type}] ${message}`);
+        }
+        
+        function resetDomainForm() {
+            document.getElementById('domain-input').disabled = false;
+            document.getElementById('account-select').disabled = false;
+            document.getElementById('setup-button').disabled = false;
+        }
+        
+        // ===== SCRIPT MANAGEMENT FUNCTIONALITY =====
+        
+        // Load buckets for selected account
+        async function loadBuckets(accountKey) {
+            const accountSelect = document.getElementById('script-account-select');
+            const bucketSelect = document.getElementById('bucket-select');
+            
+            if (!accountKey) {
+                accountKey = accountSelect.value;
+            }
+            
+            if (!accountKey) {
+                bucketSelect.innerHTML = '<option value="">Select an AWS account first</option>';
+                document.getElementById('file-browser').style.display = 'none';
+                return;
+            }
+            
+            try {
+                bucketSelect.innerHTML = '<option value="">Loading buckets...</option>';
+                const { data } = await apiCall(`/api/buckets/${accountKey}`);
+                
+                bucketSelect.innerHTML = '';
+                
+                if (data.buckets && data.buckets.length > 0) {
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = '-- Select a bucket --';
+                    bucketSelect.appendChild(emptyOption);
+                    
+                    data.buckets.forEach(bucket => {
+                        const option = document.createElement('option');
+                        option.value = bucket.name;
+                        option.textContent = bucket.name;
+                        bucketSelect.appendChild(option);
+                    });
+                    
+                    if (data.buckets.length === 1) {
+                        bucketSelect.value = data.buckets[0].name;
+                        loadBucketFiles(data.buckets[0].name, accountKey);
+                    }
+                } else {
+                    bucketSelect.innerHTML = '<option value="">No buckets found</option>';
+                    document.getElementById('file-browser').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Error loading buckets:', error);
+                bucketSelect.innerHTML = '<option value="">Error loading buckets</option>';
+                document.getElementById('file-browser').style.display = 'none';
+            }
+        }
+        
+        // Load files from the selected bucket
+        async function loadBucketFiles(bucketName, accountKey) {
+            if (!bucketName) {
+                document.getElementById('file-browser').style.display = 'none';
+                return;
+            }
+            
+            const fileBrowser = document.getElementById('file-browser');
+            const fileListContent = document.getElementById('file-list-content');
+            
+            fileBrowser.style.display = 'block';
+            fileListContent.innerHTML = 'Loading files...';
+            
+            try {
+                const { data } = await apiCall(`/api/bucket-files/${accountKey}/${bucketName}`);
+                
+                if (data.files && data.files.length > 0) {
+                    const htmlFiles = data.files.filter(file => file.key.endsWith('.html'));
+                    
+                    if (htmlFiles.length > 0) {
+                        let fileListHtml = '<ul style="list-style-type: none; padding: 0;">';
+                        
+                        htmlFiles.forEach(file => {
+                            fileListHtml += `<li style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                                              onclick="selectFile('${file.key}')">
+                                              📄 ${file.key}
+                                          </li>`;
+                        });
+                        
+                        fileListHtml += '</ul>';
+                        fileListContent.innerHTML = fileListHtml;
+                    } else {
+                        fileListContent.innerHTML = 'No HTML files found in this bucket.';
+                    }
+                } else {
+                    fileListContent.innerHTML = 'No files found in this bucket.';
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                fileListContent.innerHTML = 'Error loading files. Please try again.';
+            }
+        }
+        
+        // Select a file from the list
+        function selectFile(fileKey) {
+            document.getElementById('selected-file').value = fileKey;
+            
+            // Highlight the selected file
+            const fileItems = document.querySelectorAll('#file-list-content li');
+            fileItems.forEach(item => {
+                item.style.backgroundColor = '';
+            });
+            
+            const selectedItem = Array.from(fileItems).find(item => item.textContent.trim().includes(fileKey));
+            if (selectedItem) {
+                selectedItem.style.backgroundColor = '#e9f5ff';
+            }
+        }
+        
+        // Replace Script
+        async function replaceScript() {
+            const accountKey = document.getElementById('script-account-select').value;
+            const bucketName = document.getElementById('bucket-select').value;
+            const selectedFile = document.getElementById('selected-file').value.trim();
+            const findText = document.getElementById('find-text').value.trim();
+            const replaceText = document.getElementById('replace-text').value.trim();
+            
+            if (!accountKey || !bucketName || !selectedFile || !findText) {
+                showScriptStatus('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            try {
+                showScriptStatus(`Replacing script in file: ${selectedFile}...`, 'info');
+                
+                const { data } = await apiCall('/api/replace-script', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        account: accountKey,
+                        bucket: bucketName,
+                        file: selectedFile,
+                        find: findText,
+                        replace: replaceText
+                    })
+                });
+                
+                showScriptStatus(data.message || 'Script replaced successfully', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showScriptStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Add Script
+        async function addScript() {
+            const accountKey = document.getElementById('script-account-select').value;
+            const bucketName = document.getElementById('bucket-select').value;
+            const selectedFile = document.getElementById('selected-file').value.trim();
+            const scriptText = document.getElementById('new-script').value.trim();
+            const locationButton = document.querySelector('[data-script-location].active');
+            const location = locationButton ? locationButton.getAttribute('data-script-location') : 'head';
+            
+            if (!accountKey || !bucketName || !selectedFile || !scriptText) {
+                showScriptStatus('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            try {
+                showScriptStatus(`Adding script to ${location} in file: ${selectedFile}...`, 'info');
+                
+                const { data } = await apiCall('/api/add-script', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        account: accountKey,
+                        bucket: bucketName,
+                        file: selectedFile,
+                        script: scriptText,
+                        location: location
+                    })
+                });
+                
+                showScriptStatus(data.message || `Script added to ${location} successfully`, 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showScriptStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function showScriptStatus(message, type) {
+            const statusElement = document.getElementById('script-status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = 'block';
+        }
+        
+        // ===== COPY FILES FUNCTIONALITY =====
+        
+        // Load source buckets
+        async function loadSourceBuckets(accountKey) {
+            const bucketSelect = document.getElementById('source-bucket-select');
+            
+            if (!accountKey) {
+                bucketSelect.innerHTML = '<option value="">Select an AWS account first</option>';
+                document.getElementById('source-file-browser').style.display = 'none';
+                return;
+            }
+            
+            try {
+                const { data } = await apiCall(`/api/buckets/${accountKey}`);
+                
+                bucketSelect.innerHTML = '<option value="">-- Select a bucket --</option>';
+                
+                if (data.buckets && data.buckets.length > 0) {
+                    data.buckets.forEach(bucket => {
+                        const option = document.createElement('option');
+                        option.value = bucket.name;
+                        option.textContent = bucket.name;
+                        bucketSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading buckets:', error);
+                bucketSelect.innerHTML = '<option value="">Error loading buckets</option>';
+            }
+        }
+        
+        // Load target buckets
+        async function loadTargetBuckets(accountKey) {
+            const bucketSelect = document.getElementById('target-bucket-select');
+            
+            if (!accountKey) {
+                bucketSelect.innerHTML = '<option value="">Select an AWS account first</option>';
+                return;
+            }
+            
+            try {
+                const { data } = await apiCall(`/api/buckets/${accountKey}`);
+                
+                bucketSelect.innerHTML = '<option value="">-- Select a bucket --</option>';
+                
+                if (data.buckets && data.buckets.length > 0) {
+                    data.buckets.forEach(bucket => {
+                        const option = document.createElement('option');
+                        option.value = bucket.name;
+                        option.textContent = bucket.name;
+                        bucketSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading buckets:', error);
+                bucketSelect.innerHTML = '<option value="">Error loading buckets</option>';
+            }
+        }
+        
+        // Load files from source bucket
+        async function loadSourceFiles(bucketName, accountKey) {
+            if (!bucketName) {
+                document.getElementById('source-file-browser').style.display = 'none';
+                return;
+            }
+            
+            const fileBrowser = document.getElementById('source-file-browser');
+            const fileListContent = document.getElementById('source-file-list-content');
+            
+            fileBrowser.style.display = 'block';
+            fileListContent.innerHTML = 'Loading files and folders...';
+            
+            try {
+                const { data } = await apiCall(`/api/bucket-contents/${accountKey}/${bucketName}`);
+                
+                if (data.contents && data.contents.length > 0) {
+                    let fileListHtml = '<ul style="list-style-type: none; padding: 0;">';
+                    
+                    // Group items by top-level folders
+                    const topLevelFolders = new Set();
+                    const rootFiles = [];
+                    
+                    data.contents.forEach(item => {
+                        if (item.key.includes('/')) {
+                            const pathParts = item.key.split('/');
+                            const topLevelFolder = pathParts[0];
+                            topLevelFolders.add(topLevelFolder);
+                        } else {
+                            rootFiles.push(item);
+                        }
+                    });
+                    
+                    // Add top-level folders first
+                    Array.from(topLevelFolders).sort().forEach(folderName => {
+                        fileListHtml += `<li style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                                          onclick="toggleSelectFolder('${folderName}')">
+                                          📁 ${folderName}/
+                                          <input type="checkbox" class="folder-checkbox" data-folder="${folderName}" style="margin-left: 10px;">
+                                      </li>`;
+                    });
+                    
+                    // Then add root files
+                    rootFiles.sort((a, b) => a.key.localeCompare(b.key)).forEach(file => {
+                        fileListHtml += `<li style="padding: 5px; cursor: pointer; border-bottom: 1px solid #eee;" 
+                                          onclick="toggleSelectFile('${file.key}')">
+                                          📄 ${file.key}
+                                          <input type="checkbox" class="file-checkbox" data-file="${file.key}" style="margin-left: 10px;">
+                                      </li>`;
+                    });
+                    
+                    fileListHtml += '</ul>';
+                    fileListContent.innerHTML = fileListHtml;
+                    
+                    // Add event listeners to checkboxes
+                    document.querySelectorAll('.folder-checkbox').forEach(checkbox => {
+                        checkbox.addEventListener('change', function(e) {
+                            e.stopPropagation();
+                            updateSelectedItems();
+                        });
+                    });
+                    
+                    document.querySelectorAll('.file-checkbox').forEach(checkbox => {
+                        checkbox.addEventListener('change', function(e) {
+                            e.stopPropagation();
+                            updateSelectedItems();
+                        });
+                    });
+                    
+                } else {
+                    fileListContent.innerHTML = `No files found in bucket: ${bucketName}`;
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                fileListContent.innerHTML = `Error loading files from bucket: ${bucketName}`;
+            }
+        }
+        
+        // Toggle selection functions
+        function toggleSelectFolder(folderPath) {
+            const checkbox = document.querySelector(`.folder-checkbox[data-folder="${folderPath}"]`);
+            checkbox.checked = !checkbox.checked;
+            updateSelectedItems();
+            updateSearchReplaceFolders();
+        }
+        
+        function toggleSelectFile(filePath) {
+            const checkbox = document.querySelector(`.file-checkbox[data-file="${filePath}"]`);
+            checkbox.checked = !checkbox.checked;
+            updateSelectedItems();
+        }
+        
+        function updateSelectedItems() {
+            const selectedFolders = Array.from(document.querySelectorAll('.folder-checkbox:checked')).map(cb => cb.getAttribute('data-folder'));
+            const selectedFiles = Array.from(document.querySelectorAll('.file-checkbox:checked')).map(cb => cb.getAttribute('data-file'));
+            
+            const selectedItemsContainer = document.getElementById('selected-items');
+            const copyButton = document.getElementById('copy-button');
+            
+            if (selectedFolders.length === 0 && selectedFiles.length === 0) {
+                selectedItemsContainer.innerHTML = 'No items selected';
+                copyButton.disabled = true;
+            } else {
+                let html = '<ul style="margin: 0; padding-left: 20px;">';
+                
+                selectedFolders.forEach(folder => {
+                    html += `<li>📁 ${folder}/</li>`;
+                });
+                
+                selectedFiles.forEach(file => {
+                    html += `<li>📄 ${file}</li>`;
+                });
+                
+                html += '</ul>';
+                selectedItemsContainer.innerHTML = html;
+                copyButton.disabled = false;
+            }
+        }
+        
+        // Copy files and folders
+        async function copyFilesAndFolders() {
+            const sourceAccount = document.getElementById('source-account-select').value;
+            const sourceBucket = document.getElementById('source-bucket-select').value;
+            const targetAccount = document.getElementById('target-account-select').value;
+            const targetBucket = document.getElementById('target-bucket-select').value;
+            const replaceVariations = document.getElementById('replace-domain-variations').checked;
+            const preserveCase = document.getElementById('preserve-case').checked;
+            
+            // Get search and replace parameters
+            const enableSearchReplace = document.getElementById('enable-search-replace').checked;
+            const searchTerms = document.getElementById('search-terms').value;
+            const replaceTerms = document.getElementById('replace-terms').value;
+            const searchReplaceFolders = Array.from(document.querySelectorAll('.search-replace-folder:checked')).map(cb => cb.getAttribute('data-folder'));
+            
+            const selectedFolders = Array.from(document.querySelectorAll('.folder-checkbox:checked')).map(cb => cb.getAttribute('data-folder'));
+            const selectedFiles = Array.from(document.querySelectorAll('.file-checkbox:checked')).map(cb => cb.getAttribute('data-file'));
+            
+            if (!sourceAccount || !sourceBucket || !targetAccount || !targetBucket) {
+                showCopyStatus('Please select all required accounts and buckets', 'error');
+                return;
+            }
+            
+            if (selectedFolders.length === 0 && selectedFiles.length === 0) {
+                showCopyStatus('Please select at least one file or folder to copy', 'error');
+                return;
+            }
+            
+            // Validate search and replace terms if enabled
+            if (enableSearchReplace) {
+                const searchArray = searchTerms.split(',').map(term => term.trim()).filter(term => term);
+                const replaceArray = replaceTerms.split(',').map(term => term.trim()).filter(term => term);
+                
+                if (searchArray.length !== replaceArray.length) {
+                    showCopyStatus('Number of search terms must match number of replace terms', 'error');
+                    return;
+                }
+                
+                if (searchArray.length === 0) {
+                    showCopyStatus('Please enter at least one search term', 'error');
+                    return;
+                }
+                
+                if (searchReplaceFolders.length === 0) {
+                    showCopyStatus('Please select at least one folder for search and replace', 'error');
+                    return;
+                }
+            }
+            
+            // Extract domain names from bucket names
+            const extractDomain = (bucketName) => {
+                // Split by dots and get all parts
+                const parts = bucketName.split('.');
+                
+                // If we have at least 2 parts (domain.tld)
+                if (parts.length >= 2) {
+                    // Get the last part (TLD)
+                    const tld = parts[parts.length - 1];
+                    // Get everything before the last dot
+                    const domain = parts.slice(0, -1).join('.');
+                    return domain;
+                }
+                
+                return bucketName;
+            };
+            
+            const sourceDomain = extractDomain(sourceBucket);
+            const targetDomain = extractDomain(targetBucket);
+            
+            // Show progress
+            document.getElementById('copy-progress-container').style.display = 'block';
+            document.getElementById('copy-progress-fill').style.width = '10%';
+            document.getElementById('copy-progress-text').textContent = 'Starting copy operation...';
+            
+            try {
+                showCopyStatus('Copying files and folders...', 'info');
+                
+                const { data } = await apiCall('/api/copy-files', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        sourceAccount,
+                        sourceBucket,
+                        targetAccount,
+                        targetBucket,
+                        selectedFolders,
+                        selectedFiles,
+                        sourceDomain,
+                        targetDomain,
+                        replaceVariations: false,
+                        preserveCase: true,
+                        enableSearchReplace,
+                        searchTerms: searchTerms,
+                        replaceTerms: replaceTerms,
+                        searchReplaceFolders: searchReplaceFolders
+                    })
+                });
+                
+                document.getElementById('copy-progress-fill').style.width = '100%';
+                document.getElementById('copy-progress-text').textContent = 'Copy completed successfully!';
+                showCopyStatus(data.message || 'Files copied successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('copy-progress-fill').style.width = '100%';
+                document.getElementById('copy-progress-fill').style.backgroundColor = '#dc3545';
+                document.getElementById('copy-progress-text').textContent = 'Copy failed';
+                showCopyStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function showCopyStatus(message, type) {
+            const statusElement = document.getElementById('copy-status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = 'block';
+        }
+        
+        // ===== EDIT FILE FUNCTIONALITY =====
+        
+        // Global variable to store current file content
+        let currentFileContent = '';
+        
+        // Load buckets for edit file tab
+        async function loadEditBuckets(accountKey) {
+            const bucketSelect = document.getElementById('edit-bucket-select');
+            bucketSelect.innerHTML = '<option value="">Loading buckets...</option>';
+            
+            try {
+                const { data } = await apiCall(`/api/buckets/${accountKey}`);
+                
+                if (data.buckets && data.buckets.length > 0) {
+                    bucketSelect.innerHTML = '<option value="">-- Select a bucket --</option>';
+                    data.buckets.forEach(bucket => {
+                        const option = document.createElement('option');
+                        option.value = bucket.name;
+                        option.textContent = bucket.name;
+                        bucketSelect.appendChild(option);
+                    });
+                } else {
+                    bucketSelect.innerHTML = '<option value="">No buckets found</option>';
+                }
+            } catch (error) {
+                console.error('Error loading buckets:', error);
+                bucketSelect.innerHTML = '<option value="">Error loading buckets</option>';
+            }
+        }
+
+        // Load file tree for the selected bucket
+        async function loadFileTree(bucketName, accountKey) {
+            const treeContainer = document.getElementById('file-tree');
+            
+            if (!bucketName || !accountKey) {
+                treeContainer.innerHTML = '<div style="color: #666;">Select a bucket to browse files</div>';
+                return;
+            }
+            
+            treeContainer.innerHTML = '<div style="color: #666;">Loading...</div>';
+            
+            try {
+                // Get only root level contents (with delimiter)
+                const { data } = await apiCall(`/api/bucket-contents/${accountKey}/${bucketName}`);
+                
+                if (!data.contents || data.contents.length === 0) {
+                    treeContainer.innerHTML = '<div style="color: #666;">No files or folders found</div>';
+                    return;
+                }
+                
+                // Build tree structure
+                treeContainer.innerHTML = '';
+                
+                // Separate folders and files
+                const folders = data.contents.filter(item => item.type === 'folder');
+                const files = data.contents.filter(item => item.type === 'file');
+                
+                // Render folders first
+                folders.forEach(folder => {
+                    const folderElement = createFolderElement(folder, accountKey, bucketName);
+                    treeContainer.appendChild(folderElement);
+                });
+                
+                // Then render root files
+                files.forEach(file => {
+                    const fileElement = createFileElement(file);
+                    treeContainer.appendChild(fileElement);
+                });
+                
+            } catch (error) {
+                console.error('Error loading file tree:', error);
+                treeContainer.innerHTML = '<div style="color: #dc3545;">Error loading files</div>';
+            }
+        }
+        
+        // Create a folder element with expand/collapse functionality
+        function createFolderElement(folder, accountKey, bucketName) {
+            const folderDiv = document.createElement('div');
+            folderDiv.className = 'tree-item';
+            
+            const folderHeader = document.createElement('div');
+            folderHeader.className = 'tree-folder';
+            folderHeader.innerHTML = `
+                <span class="tree-expand">▶</span>
+                <span class="tree-icon">📁</span>
+                <span>${folder.name || folder.key.replace(/\/$/, '')}</span>
+            `;
+            
+            const childrenDiv = document.createElement('div');
+            childrenDiv.className = 'tree-children';
+            
+            // Add click handler for expand/collapse
+            folderHeader.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const expandIcon = folderHeader.querySelector('.tree-expand');
+                const isExpanded = childrenDiv.classList.contains('expanded');
+                
+                if (isExpanded) {
+                    // Collapse
+                    childrenDiv.classList.remove('expanded');
+                    expandIcon.textContent = '▶';
+                } else {
+                    // Expand
+                    childrenDiv.classList.add('expanded');
+                    expandIcon.textContent = '▼';
+                    
+                    // Load children if not already loaded
+                    if (childrenDiv.children.length === 0) {
+                        childrenDiv.innerHTML = '<div style="color: #666; margin-left: 20px;">Loading...</div>';
+                        await loadFolderContents(folder.key, childrenDiv, accountKey, bucketName);
+                    }
+                }
+            });
+            
+            folderDiv.appendChild(folderHeader);
+            folderDiv.appendChild(childrenDiv);
+            
+            return folderDiv;
+        }
+        
+        // Create a file element
+        function createFileElement(file) {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'tree-file';
+            fileDiv.innerHTML = `
+                <span class="tree-icon">📄</span>
+                <span>${file.name || file.key}</span>
+            `;
+            
+            fileDiv.addEventListener('click', function() {
+                // Remove selected class from all files
+                document.querySelectorAll('.tree-file').forEach(el => el.classList.remove('selected'));
+                // Add selected class to this file
+                fileDiv.classList.add('selected');
+                // Update selected file input
+                document.getElementById('selected-edit-file').value = file.key;
+                // Load file content
+                loadFileContent(file.key);
+            });
+            
+            return fileDiv;
+        }
+        
+        // Load contents of a folder
+        async function loadFolderContents(folderKey, containerElement, accountKey, bucketName) {
+            try {
+                const { data } = await apiCall(`/api/bucket-contents/${accountKey}/${bucketName}?prefix=${encodeURIComponent(folderKey)}`);
+                
+                containerElement.innerHTML = '';
+                
+                if (!data.contents || data.contents.length === 0) {
+                    containerElement.innerHTML = '<div style="color: #666; margin-left: 20px;">Empty folder</div>';
+                    return;
+                }
+                
+                // Separate folders and files
+                const folders = data.contents.filter(item => item.type === 'folder');
+                const files = data.contents.filter(item => item.type === 'file');
+                
+                // Render folders first
+                folders.forEach(folder => {
+                    const folderElement = createFolderElement(folder, accountKey, bucketName);
+                    containerElement.appendChild(folderElement);
+                });
+                
+                // Then render files
+                files.forEach(file => {
+                    const fileElement = createFileElement(file);
+                    containerElement.appendChild(fileElement);
+                });
+                
+            } catch (error) {
+                console.error('Error loading folder contents:', error);
+                containerElement.innerHTML = '<div style="color: #dc3545; margin-left: 20px;">Error loading folder contents</div>';
+            }
+        }
+        
+
+        // Load file content
+        async function loadFileContent(fileKey) {
+            const bucketName = document.getElementById('edit-bucket-select').value;
+            const accountKey = document.getElementById('edit-account-select').value;
+            
+            if (!fileKey) {
+                return;
+            }
+            
+            try {
+                showEditStatus('Loading file...', 'info');
+                const { data } = await apiCall(`/api/get-file-content/${accountKey}/${bucketName}/${fileKey}`);
+                
+                document.getElementById('file-content').value = data.content;
+                currentFileContent = data.content;  // Store the original content
+                document.getElementById('save-button').disabled = false;
+                
+                showEditStatus('File loaded successfully', 'success');
+            } catch (error) {
+                console.error('Error:', error);
+                showEditStatus(`Error: ${error.message}`, 'error');
+                document.getElementById('file-content').value = '';
+                document.getElementById('save-button').disabled = true;
+            }
+        }
+
+        // Save changes to the file
+        async function saveFileContent() {
+            const accountKey = document.getElementById('edit-account-select').value;
+            const bucketName = document.getElementById('edit-bucket-select').value;
+            const fileKey = document.getElementById('selected-edit-file').value;
+            const content = document.getElementById('file-content').value;
+            
+            if (!accountKey || !bucketName || !fileKey) {
+                showEditStatus('Please select a file to save', 'error');
+                return;
+            }
+            
+            try {
+                showEditStatus('Saving file...', 'info');
+                
+                const { data } = await apiCall('/api/save-file-content', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        account: accountKey,
+                        bucket: bucketName,
+                        file: fileKey,
+                        content: content
+                    })
+                });
+                
+                currentFileContent = content;  // Update stored content
+                document.getElementById('save-button').disabled = false;  // Allow saving again
+                showEditStatus(data.message || 'File saved successfully', 'success');
+                
+                // Reload the file to ensure we have the latest version
+                setTimeout(() => {
+                    loadFileContent(fileKey);
+                }, 1000);
+            } catch (error) {
+                console.error('Error:', error);
+                showEditStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Show status message for edit file tab
+        function showEditStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('edit-status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        // Add this to handle the search/replace checkbox
+        const enableSearchReplace = document.getElementById('enable-search-replace');
+        if (enableSearchReplace) {
+            enableSearchReplace.addEventListener('change', function() {
+                const container = document.getElementById('search-replace-container');
+                if (container) {
+                    container.style.display = this.checked ? 'block' : 'none';
+                }
+            });
+        }
+
+        function updateSearchReplaceFolders() {
+            const container = document.getElementById('search-replace-folders');
+            const selectedFolders = Array.from(document.querySelectorAll('.folder-checkbox:checked')).map(cb => cb.getAttribute('data-folder'));
+            
+            if (selectedFolders.length === 0) {
+                container.innerHTML = '<div class="text-muted">Select folders above first</div>';
+                return;
+            }
+            
+            let html = '<div class="checkbox-group">';
+            selectedFolders.forEach(folder => {
+                html += `
+                    <div style="margin-bottom: 5px;">
+                        <label>
+                            <input type="checkbox" class="search-replace-folder" data-folder="${folder}" checked>
+                            ${folder}
+                        </label>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // ===== SCRAPER FUNCTIONALITY =====
+        
+        // Extract domain from URL (basic extraction for initial setup)
+        function extractDomain() {
+            const url = document.getElementById('scraper-url').value.trim();
+            if (!url) {
+                document.getElementById('original-domains').value = '';
+                document.getElementById('custom-script').value = '';
+                return;
+            }
+            
+            try {
+                const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
+                const domain = urlObj.hostname.replace('www.', '');
+                // Don't auto-fill anymore, user should use Analyze button
+                document.getElementById('original-domains').placeholder = `Main domain: ${domain} (Click Analyze to find all domains)`;
+            } catch (error) {
+                document.getElementById('original-domains').placeholder = 'Click "Analyze Website" to auto-discover domains';
+            }
+        }
+        
+        // Toggle edit site options
+        function toggleEditSite() {
+            const editSite = document.getElementById('edit-site').checked;
+            const editOptions = document.getElementById('edit-options');
+            
+            if (editSite) {
+                editOptions.style.display = 'block';
+                extractDomain(); // Update placeholder
+            } else {
+                editOptions.style.display = 'none';
+            }
+        }
+        
+        // Toggle multi-page options
+        function toggleMultiPage() {
+            const multiPage = document.getElementById('multi-page').checked;
+            if (multiPage) {
+                showScraperStatus('Multi-page scraping enabled. Will download: Privacy, Terms, Services, Contact, About pages', 'info');
+            }
+        }
+        
+        // Analyze website to discover domains
+        async function analyzeDomains() {
+            const url = document.getElementById('scraper-url').value.trim();
+            
+            if (!url) {
+                showScraperStatus('Please enter a website URL first', 'error');
+                return;
+            }
+            
+            // Validate URL
+            try {
+                new URL(url.startsWith('http') ? url : 'https://' + url);
+            } catch (error) {
+                showScraperStatus('Please enter a valid URL', 'error');
+                return;
+            }
+            
+            const analyzeButton = document.getElementById('analyze-domains');
+            const originalText = analyzeButton.textContent;
+            
+            try {
+                analyzeButton.disabled = true;
+                analyzeButton.textContent = '🔍 Analyzing...';
+                showScraperStatus('Analyzing website to discover domains...', 'info');
+                
+                // Make API call to analyze the website
+                const response = await fetch(getBaseUrl() + '/api/analyze-domains', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: url
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.domains && data.domains.length > 0) {
+                    // Populate the original domains field
+                    document.getElementById('original-domains').value = data.domains.join(', ');
+                    showScraperStatus(`Found ${data.domains.length} domains: ${data.domains.join(', ')}`, 'success');
+                } else {
+                    showScraperStatus('No additional domains found on the website', 'info');
+                }
+                
+            } catch (error) {
+                console.error('Domain analysis error:', error);
+                showScraperStatus(`Analysis failed: ${error.message}`, 'error');
+            } finally {
+                analyzeButton.disabled = false;
+                analyzeButton.textContent = originalText;
+            }
+        }
+        
+        // Update custom script based on replacement domains
+        function updateCustomScript() {
+            const replacementDomains = document.getElementById('replacement-domains').value.trim();
+            const customScriptField = document.getElementById('custom-script');
+            
+            if (replacementDomains) {
+                const firstDomain = replacementDomains.split(',')[0].trim();
+                if (firstDomain) {
+                    customScriptField.value = `https://${firstDomain}/track.js`;
+                    customScriptField.placeholder = `Auto-generated: https://${firstDomain}/track.js`;
+                }
+            } else {
+                customScriptField.value = '';
+                customScriptField.placeholder = 'Script will be auto-generated from first replacement domain';
+            }
+        }
+        
+        // Download website
+        async function downloadWebsite() {
+            const url = document.getElementById('scraper-url').value.trim();
+            const editSite = document.getElementById('edit-site').checked;
+            const multiPage = document.getElementById('multi-page').checked;
+            
+            if (!url) {
+                showScraperStatus('Please enter a website URL', 'error');
+                return;
+            }
+            
+            // Validate URL
+            try {
+                new URL(url.startsWith('http') ? url : 'https://' + url);
+            } catch (error) {
+                showScraperStatus('Please enter a valid URL', 'error');
+                return;
+            }
+            
+            const originalDomains = editSite ? 
+                document.getElementById('original-domains').value.trim().split(',').map(d => d.trim()).filter(d => d) : 
+                [];
+            const replacementDomains = editSite ? 
+                document.getElementById('replacement-domains').value.trim().split(',').map(d => d.trim()).filter(d => d) : 
+                [];
+            const customScript = editSite ? document.getElementById('custom-script').value.trim() : '';
+            const removeTracking = editSite ? document.getElementById('remove-tracking').checked : false;
+            
+            // Validate domain replacement pairs if edit site is enabled
+            if (editSite && originalDomains.length > 0 && replacementDomains.length > 0) {
+                if (originalDomains.length !== replacementDomains.length) {
+                    showScraperStatus('Number of original domains must match number of replacement domains', 'error');
+                    return;
+                }
+            }
+            
+            // Show progress
+            document.getElementById('scraper-progress-container').style.display = 'block';
+            document.getElementById('scraper-progress-fill').style.width = '10%';
+            
+            let progressText = multiPage ? 'Searching for target pages (Privacy, Terms, Services, Contact)...' : 'Starting website download...';
+            document.getElementById('scraper-progress-text').textContent = progressText;
+            document.getElementById('download-website').disabled = true;
+            
+            try {
+                let statusMessage = editSite ? 
+                    'Downloading and editing website...' : 
+                    'Downloading website...';
+                if (multiPage) {
+                    statusMessage += ' (Looking for Privacy, Terms, Services, Contact pages)';
+                }
+                showScraperStatus(statusMessage, 'info');
+                
+                // Make the API call
+                const response = await fetch(getBaseUrl() + '/api/scrape-website', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        edit_site: editSite,
+                        multi_page: multiPage,
+                        original_domains: originalDomains,
+                        replacement_domains: replacementDomains,
+                        custom_script: customScript,
+                        remove_tracking: removeTracking
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                // Update progress
+                document.getElementById('scraper-progress-fill').style.width = '80%';
+                document.getElementById('scraper-progress-text').textContent = 'Processing complete, preparing download...';
+                
+                // Get the filename from response headers
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'W3bCopier-website.zip';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                // Get the blob data
+                const blob = await response.blob();
+                
+                // Create download link
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+                
+                // Complete progress
+                document.getElementById('scraper-progress-fill').style.width = '100%';
+                document.getElementById('scraper-progress-text').textContent = 'Download completed successfully!';
+                
+                let successMessage = `Website downloaded as ${filename}`;
+                if (multiPage) successMessage += ' (Targeted pages: Privacy, Terms, Services, Contact)';
+                if (editSite) successMessage += ' (Domain edited)';
+                
+                showScraperStatus(successMessage, 'success');
+                
+            } catch (error) {
+                console.error('Scraper error:', error);
+                document.getElementById('scraper-progress-fill').style.width = '100%';
+                document.getElementById('scraper-progress-fill').style.backgroundColor = '#dc3545';
+                document.getElementById('scraper-progress-text').textContent = 'Download failed';
+                showScraperStatus(`Error: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('download-website').disabled = false;
+            }
+        }
+        
+        // Show status message for scraper
+        function showScraperStatus(message, type) {
+            const statusElement = document.getElementById('scraper-status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+            statusElement.style.display = 'block';
+        }
+
+        // Listen for changes in replacement domains
+        document.addEventListener('DOMContentLoaded', function() {
+            const replacementDomainsField = document.getElementById('replacement-domains');
+            if (replacementDomainsField) {
+                replacementDomainsField.addEventListener('input', updateCustomScript);
+            }
+        });
+
+    </script>
+    <!-- Add this JavaScript to your existing script section -->
+<script>
+// Monaco Editor Integration for Edit File Tab
+let monacoFileEditor = null;
+let currentMonacoContent = '';
+let isMonacoInitialized = false;
+
+// Initialize Monaco Editor when the Edit File tab is first clicked
+function initializeMonacoEditor() {
+    if (isMonacoInitialized) return;
+    
+    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+    
+    require(['vs/editor/editor.main'], function () {
+        monacoFileEditor = monaco.editor.create(document.getElementById('monaco-file-editor'), {
+            value: '// Select a file to start editing\n// Advanced find and replace available with Ctrl+H',
+            language: 'plaintext',
+            theme: 'vs',
+            automaticLayout: true,
+            fontSize: 14,
+            lineNumbers: 'on',
+            roundedSelection: false,
+            scrollBeyondLastLine: false,
+            minimap: {
+                enabled: true
+            },
+            find: {
+                autoFindInSelection: 'never',
+                seedSearchStringFromSelection: 'always'
+            },
+            quickSuggestions: true,
+            wordWrap: 'on',
+            wordWrapColumn: 120
+        });
+        
+        // Content change handler
+        monacoFileEditor.onDidChangeModelContent(() => {
+            updateMonacoStatusBar();
+            updateMonacoSaveButton();
+        });
+        
+        // Cursor position handler
+        monacoFileEditor.onDidChangeCursorPosition(() => {
+            updateMonacoCursorPosition();
+        });
+        
+        // Language change handler
+        document.getElementById('editor-language').addEventListener('change', function() {
+            if (monacoFileEditor) {
+                monaco.editor.setModelLanguage(monacoFileEditor.getModel(), this.value);
+                updateMonacoFileInfo();
+            }
+        });
+        
+        // Theme change handler
+        document.getElementById('editor-theme').addEventListener('change', function() {
+            if (monacoFileEditor) {
+                monaco.editor.setTheme(this.value);
+            }
+        });
+        
+        // Initialize status
+        updateMonacoStatusBar();
+        updateMonacoCursorPosition();
+        
+        isMonacoInitialized = true;
+        console.log('Monaco Editor initialized for file editing!');
+    });
+}
+
+// Open Find & Replace in Monaco Editor
+function openEditorFindReplace() {
+    if (monacoFileEditor) {
+        monacoFileEditor.getAction('editor.action.startFindReplaceAction').run();
+        document.getElementById('editor-file-info').textContent = 'Find & Replace opened • Use Ctrl+F for find only, Ctrl+H for find & replace';
+    }
+}
+
+// Update Monaco status bar
+function updateMonacoStatusBar() {
+    if (!monacoFileEditor) return;
+    
+    const model = monacoFileEditor.getModel();
+    const lineCount = model.getLineCount();
+    const charCount = model.getValueLength();
+    
+    document.getElementById('editor-line-count').textContent = lineCount;
+    document.getElementById('editor-char-count').textContent = charCount;
+}
+
+// Update Monaco cursor position
+function updateMonacoCursorPosition() {
+    if (!monacoFileEditor) return;
+    
+    const position = monacoFileEditor.getPosition();
+    document.getElementById('editor-current-line').textContent = position.lineNumber;
+    document.getElementById('editor-current-col').textContent = position.column;
+}
+
+// Update Monaco save button state
+function updateMonacoSaveButton() {
+    if (!monacoFileEditor) return;
+    
+    const hasChanges = monacoFileEditor.getValue() !== currentMonacoContent;
+    const saveBtn = document.getElementById('save-button');
+    saveBtn.disabled = !hasChanges;
+    saveBtn.textContent = hasChanges ? '💾 Save Changes*' : '💾 Save Changes';
+}
+
+// Update Monaco file info
+function updateMonacoFileInfo() {
+    const language = document.getElementById('editor-language').value;
+    document.getElementById('editor-file-info').textContent = `${language.toUpperCase()} file • Use Ctrl+H for advanced Find & Replace`;
+}
+
+// Detect file language from extension
+function detectLanguageFromFile(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    const languageMap = {
+        'html': 'html',
+        'htm': 'html',
+        'css': 'css',
+        'js': 'javascript',
+        'json': 'json',
+        'md': 'markdown',
+        'txt': 'plaintext',
+        'xml': 'xml',
+        'php': 'php',
+        'py': 'python',
+        'java': 'java',
+        'cpp': 'cpp',
+        'c': 'c',
+        'cs': 'csharp',
+        'sql': 'sql'
+    };
+    return languageMap[extension] || 'plaintext';
+}
+
+// Modified loadFileContent function to work with Monaco Editor
+async function loadFileContent(fileKey) {
+    // Initialize Monaco if not already done
+    if (!isMonacoInitialized) {
+        initializeMonacoEditor();
+        // Wait a bit for Monaco to initialize
+        setTimeout(() => loadFileContent(fileKey), 500);
+        return;
+    }
+    
+    const bucketName = document.getElementById('edit-bucket-select').value;
+    const accountKey = document.getElementById('edit-account-select').value;
+    
+    if (!fileKey) {
+        return;
+    }
+    
+    try {
+        showEditStatus('Loading file...', 'info');
+        const { data } = await apiCall(`/api/get-file-content/${accountKey}/${bucketName}/${fileKey}`);
+        
+        // Set content in Monaco Editor
+        monacoFileEditor.setValue(data.content);
+        currentMonacoContent = data.content;
+        
+        // Detect and set language
+        const language = detectLanguageFromFile(fileKey);
+        monaco.editor.setModelLanguage(monacoFileEditor.getModel(), language);
+        document.getElementById('editor-language').value = language;
+        
+        // Update UI elements
+        document.getElementById('editor-current-file').textContent = fileKey;
+        document.getElementById('selected-edit-file').value = fileKey;
+        
+        // Update status
+        updateMonacoStatusBar();
+        updateMonacoSaveButton();
+        updateMonacoFileInfo();
+        
+        // Focus the editor
+        monacoFileEditor.focus();
+        
+        showEditStatus('File loaded successfully in advanced editor', 'success');
+    } catch (error) {
+        console.error('Error:', error);
+        showEditStatus(`Error: ${error.message}`, 'error');
+        if (monacoFileEditor) {
+            monacoFileEditor.setValue('');
+            document.getElementById('save-button').disabled = true;
+        }
+    }
+}
+
+// Modified saveFileContent function to work with Monaco Editor
+async function saveFileContent() {
+    const accountKey = document.getElementById('edit-account-select').value;
+    const bucketName = document.getElementById('edit-bucket-select').value;
+    const fileKey = document.getElementById('selected-edit-file').value;
+    
+    if (!accountKey || !bucketName || !fileKey) {
+        showEditStatus('Please select a file to save', 'error');
+        return;
+    }
+    
+    if (!monacoFileEditor) {
+        showEditStatus('Editor not initialized', 'error');
+        return;
+    }
+    
+    const content = monacoFileEditor.getValue();
+    
+    try {
+        showEditStatus('Saving file...', 'info');
+        
+        const { data } = await apiCall('/api/save-file-content', {
+            method: 'POST',
+            body: JSON.stringify({
+                account: accountKey,
+                bucket: bucketName,
+                file: fileKey,
+                content: content
+            })
+        });
+        
+        currentMonacoContent = content;
+        updateMonacoSaveButton();
+        showEditStatus(data.message || 'File saved successfully', 'success');
+        
+        // Update file info
+        document.getElementById('editor-file-info').textContent = 'File saved successfully! • Use Ctrl+H for Find & Replace';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showEditStatus(`Error: ${error.message}`, 'error');
+    }
+}
+
+// Initialize Monaco Editor when Edit File tab is clicked
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handler for Edit File tab
+    const editFileTab = document.querySelector('[data-tab="edit-file"]');
+    if (editFileTab) {
+        editFileTab.addEventListener('click', function() {
+            // Delay initialization to ensure tab content is visible
+            setTimeout(() => {
+                if (!isMonacoInitialized) {
+                    initializeMonacoEditor();
+                }
+            }, 100);
+        });
+    }
+});
+
+// Add global functions for Monaco Editor integration
+window.monacoFileEditor = {
+    openFindReplace: openEditorFindReplace,
+    getContent: () => monacoFileEditor ? monacoFileEditor.getValue() : '',
+    setContent: (content, language = 'plaintext') => {
+        if (monacoFileEditor) {
+            monacoFileEditor.setValue(content);
+            monaco.editor.setModelLanguage(monacoFileEditor.getModel(), language);
+            currentMonacoContent = content;
+            updateMonacoStatusBar();
+            updateMonacoSaveButton();
+        }
+    },
+    focus: () => monacoFileEditor ? monacoFileEditor.focus() : null
+};
+</script>
+</body>
+</html>

@@ -2,111 +2,189 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Login | Secure Panel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATOM - Automated Tasks & Operations Manager - Login</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/professional-theme.css') }}">
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #4A90E2, #3548d0);
-      height: 100vh;
+      background: linear-gradient(135deg, #232F3E 0%, #37475A 100%);
+      min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
-    .login-container {
-      background-color: white;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    .login-wrapper {
       width: 100%;
       max-width: 400px;
     }
 
-    .login-container h2 {
+    .login-logo {
       text-align: center;
-      margin-bottom: 30px;
-      color: #333;
+      margin-bottom: 32px;
     }
 
-    .form-group {
+    .login-logo h1 {
+      color: white;
+      font-size: 28px;
+      font-weight: 300;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .login-logo .logo-accent {
+      color: #FF9900;
+      font-weight: 600;
+    }
+
+    .login-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
+      padding: 32px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-header h2 {
+      color: #16191F;
+      font-size: 24px;
+      font-weight: 400;
+      margin: 0;
+    }
+
+    .login-form .form-group {
       margin-bottom: 20px;
     }
 
-    .form-group label {
+    .login-form .form-label {
       display: block;
       margin-bottom: 8px;
-      color: #555;
-      font-weight: bold;
+      color: #37475A;
+      font-weight: 500;
+      font-size: 14px;
     }
 
-    .form-group input {
+    .login-form .form-control {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
+      padding: 10px 12px;
+      font-size: 14px;
+      border: 1px solid #C4CDD5;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      background-color: #FAFAFA;
     }
 
-    .form-group input:focus {
+    .login-form .form-control:focus {
+      background-color: white;
+      border-color: #146EB4;
+      box-shadow: 0 0 0 3px rgba(20, 110, 180, 0.1);
       outline: none;
-      border-color: #4A90E2;
-      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
     }
 
     .login-btn {
       width: 100%;
       padding: 12px;
-      background-color: #4A90E2;
-      border: none;
-      border-radius: 6px;
+      background-color: #FF9900;
       color: white;
+      border: none;
+      border-radius: 4px;
       font-size: 16px;
-      font-weight: bold;
+      font-weight: 600;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: background-color 0.15s ease;
+      margin-top: 8px;
     }
 
     .login-btn:hover {
-      background-color: #3b7cc4;
+      background-color: #EC7211;
     }
 
-    .error-msg {
-      color: red;
-      text-align: center;
-      margin-top: 10px;
+    .login-btn:active {
+      transform: translateY(1px);
     }
 
-    .footer {
+    .error-message {
+      background-color: #FFF5F5;
+      border: 1px solid #FED7D7;
+      color: #C53030;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 16px;
+      font-size: 14px;
       text-align: center;
-      margin-top: 20px;
-      font-size: 13px;
-      color: #aaa;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #E3E6E8;
+      color: #697078;
+      font-size: 12px;
+    }
+
+    .security-notice {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 24px;
+      color: #697078;
+      font-size: 12px;
+    }
+
+    .security-notice svg {
+      width: 14px;
+      height: 14px;
+      margin-right: 6px;
+      fill: #697078;
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
-    <h2>Login to Dashboard</h2>
-    <form method="POST" action="{{ url_for('login') }}">
-      <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" name="username" id="username" placeholder="Enter your username" required>
+  <div class="login-wrapper">
+    <div class="login-logo">
+      <h1><span class="logo-accent">ATOM</span> - Automated Tasks & Operations Manager</h1>
+    </div>
+    
+    <div class="login-container">
+      <div class="login-header">
+        <h2>Sign in to your account</h2>
       </div>
+      
+      <form method="POST" action="{{ url_for('login') }}" class="login-form">
+        <div class="form-group">
+          <label for="username" class="form-label">Username</label>
+          <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username" required autofocus>
+        </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" name="password" id="password" placeholder="Enter your password" required>
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+        </div>
+
+        <button type="submit" class="login-btn">Sign In</button>
+
+        {% if error %}
+          <div class="error-message">{{ error }}</div>
+        {% endif %}
+      </form>
+      
+      <div class="security-notice">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clip-rule="evenodd" />
+        </svg>
+        <span>Secure connection • 256-bit encryption</span>
       </div>
-
-      <button type="submit" class="login-btn">Login</button>
-
-      {% if error %}
-        <div class="error-msg">{{ error }}</div>
-      {% endif %}
-    </form>
-    <div class="footer">© {{ 2025 }} $unnykanojiya.com All rights reserved.</div>
+      
+      <div class="login-footer">
+        © 2025 ATOM - Automated Tasks & Operations Manager by PearMedia LLC. All rights reserved.
+      </div>
+    </div>
   </div>
 </body>
 </html>
