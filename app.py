@@ -739,20 +739,11 @@ def copy_files():
             for page in paginator.paginate(Bucket=source_bucket, Prefix=folder):
                 if 'Contents' in page:
                     for obj in page['Contents']:
-                        # Only include files that are directly in the selected folder
-                        # and not in subfolders unless they are explicitly selected
                         key = obj['Key']
-                        # Check if the key is directly under the selected folder (no additional slashes after the folder)
-                        if key.startswith(folder):
-                            remaining_path = key[len(folder):]
-                            # If there are no more slashes, it's a direct file in the folder
-                            # Or if there is a slash, it's a subfolder we want to include only if explicitly selected
-                            if '/' not in remaining_path or any(
-                                key.startswith(sel_folder) and sel_folder != folder 
-                                for sel_folder in selected_folders
-                                if sel_folder != folder
-                            ):
-                                files_to_copy.append(key)
+                        # Include ALL files that start with the folder prefix
+                        # This includes files in the folder and all its subfolders
+                        if key.startswith(folder) and not key.endswith('/'):
+                            files_to_copy.append(key)
         
         # Copy files         
         for file_key in files_to_copy:             
